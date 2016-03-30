@@ -15,24 +15,25 @@ int main (int argc, char *argv[])
 	char ux_name[512],uy_name[512],uz_name[512];
 	char mpp_name[512],mps1_name[512],mps2_name[512];
 	char vp_name[512],vs_name[512],wav_name[512];
-	struct SeisHeader *h_ux;
-	struct SeisHeader *h_uy;
-	struct SeisHeader *h_uz;
-	struct SeisHeader *h_mpp;
-	struct SeisHeader *h_mps1;
-	struct SeisHeader *h_mps2;
-	struct SeisHeader *h_vp;
-	struct SeisHeader *h_vs;
-	struct SeisHeader *h_wav;
-	int nx,ny,nz,nt,ix,iz,it;
-	float **ux,**uy,**uz,**mpp,**mps1,**mps2,**vp,**vs,**wav,sx,sy,sz,gz;
+	struct SeisHeader *h_ux=NULL;
+	struct SeisHeader *h_uy=NULL;
+	struct SeisHeader *h_uz=NULL;
+	struct SeisHeader *h_mpp=NULL;
+	struct SeisHeader *h_mps1=NULL;
+	struct SeisHeader *h_mps2=NULL;
+	struct SeisHeader *h_vp=NULL;
+	struct SeisHeader *h_vs=NULL;
+	struct SeisHeader *h_wav=NULL;
+	int nx,ny,nz,nt,ix,iz,it,nref;
+	float **ux=NULL,**uy=NULL,**uz=NULL,**mpp=NULL,**mps1=NULL,**mps2=NULL,**vp=NULL,**vs=NULL,**wav=NULL,sx,sy,sz,gz;
 	float ox,dx,oy,dy,oz,dz,ot,dt,fmin,fmax;
 	int ntraces;
 	int padt,padx;
-	bool adj,verbose;
+	bool adj,pspi,verbose;
 	struct SeisFileHeader fh;
 
 	if (!par_read_bool(argc,argv,"adj",&adj)) adj = true;
+	if (!par_read_bool(argc,argv,"pspi",&pspi)) pspi = true;
 	if (!par_read_bool(argc,argv,"verbose",&verbose)) verbose = false;
 	if (!par_read_string(argc,argv,"ux", ux_name)) { docs (); exit (1); }
 	if (!par_read_string(argc,argv,"uy", uy_name)) { docs (); exit (1); }
@@ -51,6 +52,7 @@ int main (int argc, char *argv[])
 	if (!par_read_float(argc,argv,"fmax",&fmax)) fmax = 80;
 	if (!par_read_int(argc,argv,"padt",&padt)) padt = 1;
 	if (!par_read_int(argc,argv,"padx",&padx)) padx = 1;
+	if (!par_read_int(argc,argv,"nref",&nref)) nref = 5;
 	// get dimensions from velocity (nz,oz,dz,nx,ox,dx) and wavelet (nt,sx) files
 	InitFileHeader(&fh);
 	ReadFileHeader(wav_name,&fh);
@@ -76,10 +78,10 @@ int main (int argc, char *argv[])
 	ny = h_vp[ntraces-1].imy - h_vp[0].imy + 1;
 	oz = fh.o1;
 	dz = fh.d1;
-        ox = h_vp[0].mx;
-        dx = h_vp[1].mx - h_vp[0].mx;
-        oy = h_vp[0].my;
-        dy = dx;
+    ox = h_vp[0].mx;
+    dx = h_vp[1].mx - h_vp[0].mx;
+    oy = h_vp[0].my;
+    dy = dx;
 
 	if (adj){
 		h_ux = allocSeisHeader(nx*ny);
@@ -161,10 +163,10 @@ int main (int argc, char *argv[])
 	     ny,oy,dy,
 	     sx,sy,
 	     nz,oz,dz,gz,sz,
-	     vp,vs, 
+	     vp,vs,nref, 
 	     fmin,fmax,
 	     padt,padx,
-	     adj,verbose);
+	     adj,pspi,verbose);
 
 	if (adj){
 		InitFileHeader(&fh);
@@ -174,20 +176,20 @@ int main (int argc, char *argv[])
 		for (ix=0;ix<nx*ny;ix++) h_mpp[ix].trid = 1;
 		for (ix=0;ix<nx*ny;ix++) h_mpp[ix].mx = h_ux[ix].gx;
 		for (ix=0;ix<nx*ny;ix++) h_mpp[ix].my = h_ux[ix].gy;
-		for (ix=0;ix<nx*ny;ix++) h_mpp[ix].imx = (int) truncf((h_mpp[ix].mx - ox)/dx);
-		for (ix=0;ix<nx*ny;ix++) h_mpp[ix].imy = (int) truncf((h_mpp[ix].my - oy)/dy);
+		for (ix=0;ix<nx*ny;ix++) h_mpp[ix].imx = (int) (h_mpp[ix].mx - ox)/dx;
+		for (ix=0;ix<nx*ny;ix++) h_mpp[ix].imy = (int) (h_mpp[ix].my - oy)/dy;
 		SeisWrite(mpp_name,mpp,h_mpp,&fh);
 		for (ix=0;ix<nx*ny;ix++) h_mps1[ix].trid = 2;
 		for (ix=0;ix<nx*ny;ix++) h_mps1[ix].mx = h_ux[ix].gx;
 		for (ix=0;ix<nx*ny;ix++) h_mps1[ix].my = h_ux[ix].gy;
-		for (ix=0;ix<nx*ny;ix++) h_mps1[ix].imx = (int) truncf((h_mps1[ix].mx - ox)/dx);
-		for (ix=0;ix<nx*ny;ix++) h_mps1[ix].imy = (int) truncf((h_mps1[ix].my - oy)/dy);
+		for (ix=0;ix<nx*ny;ix++) h_mps1[ix].imx = (int) (h_mps1[ix].mx - ox)/dx;
+		for (ix=0;ix<nx*ny;ix++) h_mps1[ix].imy = (int) (h_mps1[ix].my - oy)/dy;
 		SeisWrite(mps1_name,mps1,h_mps1,&fh);
 		for (ix=0;ix<nx*ny;ix++) h_mps2[ix].trid = 2;
 		for (ix=0;ix<nx*ny;ix++) h_mps2[ix].mx = h_ux[ix].gx;
 		for (ix=0;ix<nx*ny;ix++) h_mps2[ix].my = h_ux[ix].gy;
-		for (ix=0;ix<nx*ny;ix++) h_mps2[ix].imx = (int) truncf((h_mps2[ix].mx - ox)/dx);
-		for (ix=0;ix<nx*ny;ix++) h_mps2[ix].imy = (int) truncf((h_mps2[ix].my - oy)/dy);
+		for (ix=0;ix<nx*ny;ix++) h_mps2[ix].imx = (int) (h_mps2[ix].mx - ox)/dx;
+		for (ix=0;ix<nx*ny;ix++) h_mps2[ix].imy = (int) (h_mps2[ix].my - oy)/dy;
 		SeisWrite(mps2_name,mps2,h_mps2,&fh);
 	}
 	else{

@@ -8,7 +8,8 @@
 * m : vector of filenames of image (comprised of [mpp;mps1;mps2])
 * d : vector of filenames of data (comprised of [ux;uy;uz])
 * adj : flag for adjoint (migration), or forward (demigration) (default=true) 
-* damping = 1000. : damping for deconvolution imaging condition
+* pspi : flag for Phase Shift Plus Interpolation (default=true)
+* nref : number of reference velocities to use if pspi is selected (default=5)
 * vp = "vp" : seis file containing the p-wave velocity (should have same x and z dimensions as the desired image)
 * vs = "vs" : seis file containing the s-wave velocity (should have same x and z dimensions as the desired image)
 * angx = "angx" : seis file containing incidence angles in the x direction for each shot
@@ -36,28 +37,39 @@
 
 """
 
-function ShotProfileEWEM(m::Array{ASCIIString,1},d::Array{ASCIIString,1},adj=true;damping=1000.,vp="vp.seis",vs="vs.seis",angx="angx.seis",angy="angy.seis",wav="wav.seis",sz=0.,gz=0.,nangx=1,oangx=0,dangx=1,nangy=1,oangy=0,dangy=1,fmin=0,fmax=80,padt=1,padx=1,verbose=false,sx=[0],sy=[0])
-
+function ShotProfileEWEM(m::Array{ASCIIString,1},d::Array{ASCIIString,1},adj=true;pspi=true,nref=5,vp="vp.seis",vs="vs.seis",angx="angx.seis",angy="angy.seis",wav="wav.seis",sz=0.,gz=0.,nangx=1,oangx=0,dangx=1,nangy=1,oangy=0,dangy=1,fmin=0,fmax=80,padt=1,padx=1,verbose=false,sx=[0],sy=[0])
 
 	nshot = length(sx)	
-	vel,h,extent = SeisRead(vp)
-        min_imx = h[1].imx
-        max_imx = h[end].imx
-        nx = max_imx - min_imx + 1
-        ox = h[1].mx
-        dx = h[2].mx - ox
-        min_imy = h[1].imy
-        max_imy = h[end].imy
-        ny = max_imy - min_imy + 1
-        oy = h[1].my
-        dy = ny > 1 ? h[nx+1].my - oy : dx
-        nz = h[1].n1
-        dz = h[1].d1
-        oz = h[1].o1
+	v,h,e = SeisRead(vp)
+	min_imx = h[1].imx
+	max_imx = h[end].imx
+	nx = max_imx - min_imx + 1
+	ox = h[1].mx
+	dx = h[2].mx - ox
+	min_imy = h[1].imy
+	max_imy = h[end].imy
+	ny = max_imy - min_imy + 1
+	oy = h[1].my
+	dy = ny > 1 ? h[nx+1].my - oy : dx
+	nz = h[1].n1
+	dz = h[1].d1
+	oz = h[1].o1
+	w,h,e = SeisRead(wav)
+	nt = h[1].n1
+	dt = h[1].d1
+	ot = h[1].o1
+	nsx = length(sx)
+	osx = sx[1]	
+	dsx = nsx > 1 ? sx[2] - sx[1] : 1.	
+	nsy = length(sy)	
+	osy = sy[1]	
+	dsy = nsy > 1 ? sy[2] - sy[1] : 1.
+	dsx = dsx == 0. ? 1. : dsx	
+	dsy = dsy == 0. ? 1. : dsy	
 
 	shot_list = Array(Shot3C,nshot)
 	for ishot = 1 : nshot
-		shot_list[ishot] = Shot3C(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+		shot_list[ishot] = Shot3C(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
 		shot_list[ishot].ux = join([d[1] "_shot_" Int(floor(sx[ishot])) "_" Int(floor(sy[ishot]))])
 		shot_list[ishot].uy = join([d[2] "_shot_" Int(floor(sx[ishot])) "_" Int(floor(sy[ishot]))])
 		shot_list[ishot].uz = join([d[3] "_shot_" Int(floor(sx[ishot])) "_" Int(floor(sy[ishot]))])
@@ -69,7 +81,6 @@ function ShotProfileEWEM(m::Array{ASCIIString,1},d::Array{ASCIIString,1},adj=tru
 		shot_list[ishot].vp = vp
 		shot_list[ishot].vs = vs
 		shot_list[ishot].wav = wav
-		shot_list[ishot].damping = damping
 		shot_list[ishot].sx = sx[ishot]
 		shot_list[ishot].sy = sy[ishot]
 		shot_list[ishot].sz = sz
@@ -79,6 +90,8 @@ function ShotProfileEWEM(m::Array{ASCIIString,1},d::Array{ASCIIString,1},adj=tru
 		shot_list[ishot].padt = padt
 		shot_list[ishot].padx = padx		
 		shot_list[ishot].adj = (adj == true) ? "y" : "n"
+		shot_list[ishot].pspi = (pspi == true) ? "y" : "n"
+		shot_list[ishot].nref = nref
 		shot_list[ishot].verbose = (verbose == true) ? "y" : "n"
 	end
 
@@ -258,9 +271,9 @@ function ShotProfileEWEM(m::Array{ASCIIString,1},d::Array{ASCIIString,1},adj=tru
 		stream_hps2 = open(mps2_h,"r")
 
 		for ishot = 1 : nshot
-
 			sx = shot_list[ishot].sx
 			sy = shot_list[ishot].sy
+			j = 1    				
 			h_shot = Array(Header,nx*ny)
 			for imx = 1 : nx
 				for imy = 1 : ny
@@ -352,9 +365,16 @@ function ShotProfileEWEM(m::Array{ASCIIString,1},d::Array{ASCIIString,1},adj=tru
 					end   
 				end
 			end
-			SeisWrite(shot_list[ishot].mpp,mpp_shot,h_shot)
-			SeisWrite(shot_list[ishot].mps1,mps1_shot,h_shot)
-			SeisWrite(shot_list[ishot].mps2,mps2_shot,h_shot)
+
+			extent = Seismic.Extent(nz,nx,ny,1,1,
+				oz,ox,oy,0.,0.,
+				dz,dx,dy,1.,1.,
+				"Depth","mx","my","","",
+				"m","m","m","","",
+				"")
+			SeisWrite(shot_list[ishot].mpp,mpp_shot,h_shot,extent)
+			SeisWrite(shot_list[ishot].mps1,mps1_shot,h_shot,extent)
+			SeisWrite(shot_list[ishot].mps2,mps2_shot,h_shot,extent)
 		end	
 		close(stream_mpp)
 		close(stream_hpp)	
@@ -365,14 +385,20 @@ function ShotProfileEWEM(m::Array{ASCIIString,1},d::Array{ASCIIString,1},adj=tru
 		@sync @parallel for ishot = 1 : nshot
 			a = shotewem(shot_list[ishot])
 		end
+		extent = Seismic.Extent(nt,nx,ny,nsx,nsy,
+				ot,ox,oy,osx,osy,
+				dt,dx,dy,dsx,dsy,
+				"Time","gx","gy","sx","sy",
+				"s","m","m","m","m",
+				"")
 		j = 1
 		for ishot = 1 : nshot
 			ux_shot,h_shot = SeisRead(shot_list[ishot].ux)
-			SeisWrite(d[1],ux_shot,h_shot,itrace=j)
+			SeisWrite(d[1],ux_shot,h_shot,extent,itrace=j)
 			uy_shot,h_shot = SeisRead(shot_list[ishot].uy)
-			SeisWrite(d[2],uy_shot,h_shot,itrace=j)
+			SeisWrite(d[2],uy_shot,h_shot,extent,itrace=j)
 			uz_shot,h_shot = SeisRead(shot_list[ishot].uz)
-			SeisWrite(d[3],uz_shot,h_shot,itrace=j)
+			SeisWrite(d[3],uz_shot,h_shot,extent,itrace=j)
 			j += size(ux_shot,2)
 			SeisRemove(shot_list[ishot].ux)
 			SeisRemove(shot_list[ishot].uy)
@@ -400,7 +426,6 @@ type Shot3C
 	vp
 	vs
 	wav
-	damping
 	sx
 	sy
 	sz
@@ -410,6 +435,8 @@ type Shot3C
 	padt
 	padx
 	adj
+	pspi
+	nref
 	verbose
 end
 
@@ -420,10 +447,12 @@ function shotewem(shot)
 	end
 	argv = ["0",
 	join(["adj=",shot.adj]), 
+	join(["pspi=",shot.pspi]), 
+	join(["nref=",shot.nref]), 
 	join(["ux=",shot.ux]), join(["uy=",shot.uy]), join(["uz=",shot.uz]),
 	join(["mpp=",shot.mpp]), join(["mps1=",shot.mps1]), join(["mps2=",shot.mps2]),
 	join(["vp=",shot.vp]), join(["vs=",shot.vs]), join(["wav=",shot.wav]), 
-	join(["damping=",shot.damping]), join(["sx=",shot.sx]), join(["sy=",shot.sy]),  join(["sz=",shot.sz]),  join(["gz=",shot.gz]), 
+	join(["sx=",shot.sx]), join(["sy=",shot.sy]),  join(["sz=",shot.sz]),  join(["gz=",shot.gz]), 
 	join(["fmin=",shot.fmin]),  join(["fmax=",shot.fmax]), 
 	join(["padt=",shot.padt]),  join(["padx=",shot.padx]), 
 	join(["verbose=",shot.verbose]) ] 

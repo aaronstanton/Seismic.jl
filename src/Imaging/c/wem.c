@@ -9,7 +9,7 @@ void wem(float **d, float **m, float **wav,
 		float **vel, int nref, float fmin, float fmax,
 		int padt, int padx,
 		bool adj, bool pspi, bool verbose)
-/*< wave equation depth migration operator. Can specify different velocities for src and rec side wavefields. >*/
+/*< wave equation depth migration operator. >*/
 {
 	int iz,ix,imx,imy,igx,igy,ik,iw,it,nw,nkx,nky,ntfft;
 	float dw,dkx,dky,w;
@@ -23,6 +23,9 @@ void wem(float **d, float **m, float **wav,
 	float progress;
 	int ithread,nthread;
 	float **m_threads;
+	float **vref,vmin,vmax,v;
+	int **iref1,**iref2;
+	int iref;
 
 	/* decompose slowness into layer average, and layer purturbation */
 	po = alloc1float(nz); 
@@ -35,11 +38,7 @@ void wem(float **d, float **m, float **wav,
 		for (ix=0;ix<nmx*nmy;ix++) pd[ix][iz] = 1.0/vel[ix][iz] - po[iz];
 	}
 
-
 	/****************************************************************************************/
-	float **vref,vmin,vmax,v;
-	int **iref1,**iref2;
-	int iref;
 	/* generate reference velocities for each depth step */
 	vref = alloc2float(nz,nref); /* reference velocities for each layer */
 	iref1 = alloc2int(nz,nmx*nmy); /* index of nearest lower reference velocity for each subsurface point */
@@ -49,6 +48,7 @@ void wem(float **d, float **m, float **wav,
 		for (ix=0;ix<nmx;ix++) if (vel[ix][iz] < vmin) vmin = vel[ix][iz];
 		vmax=vel[nmx-1][iz];
 		for (ix=0;ix<nmx*nmy;ix++) if (vel[ix][iz] > vmax) vmax = vel[ix][iz];
+
 		for (iref=0;iref<nref;iref++) vref[iref][iz] = vmin + (float) iref*(vmax-vmin)/((float) nref-1);
 		for (ix=0;ix<nmx*nmy;ix++){
 			v = vel[ix][iz];
@@ -66,7 +66,6 @@ void wem(float **d, float **m, float **wav,
 				iref2[ix][iz] = 0;
 			}
 		}
-
 	}
 	/****************************************************************************************/
 
@@ -114,10 +113,8 @@ void wem(float **d, float **m, float **wav,
 	/* source wavefield*/
 	for (ix=0;ix<nmx*nmy;ix++) for (iw=0;iw<nw;iw++) d_s_wx[ix][iw] = 0.;
 	for (it=0;it<nt;it++) d_t[it] = wav[0][it];
-
 	f_op(d_w,d_t,nw,nt,1); /* d_t to d_w */
 	for (iw=0;iw<nw;iw++) d_s_wx[igx*nmy + igy][iw] = d_w[iw];
-
 	/* receiver wavefield*/
 	if (adj){
 		for (ix=0;ix<nmx*nmy;ix++){
@@ -161,7 +158,6 @@ void wem(float **d, float **m, float **wav,
 			}
 		}
 	}
-
 	progress = 0.;
 #pragma omp parallel for private(iw) shared(m_threads,d_g_wx,d_s_wx)
 	for (iw=ifmin;iw<ifmax;iw++){ 
@@ -229,7 +225,7 @@ void extrap1f(float **m,complex **d_g_wx, complex **d_s_wx,
 	if (adj){
 		for (ix=0;ix<nmx*nmy;ix++){ 
 			d_xs[ix] = d_s_wx[ix][iw]/sqrtf((float) ntfft);
-			d_xg[ix] = d_g_wx[ix][iw]/sqrtf((float) ntfft);
+			d_xg[ix] = powf(w,2)*d_g_wx[ix][iw]/sqrtf((float) ntfft);
 		}
 		for (iz=0;iz<nz;iz++){ // extrapolate source and receiver wavefields
 			z = oz + dz*iz;
@@ -275,7 +271,7 @@ void extrap1f(float **m,complex **d_g_wx, complex **d_s_wx,
 			}
 		}
 		for (ix=0;ix<nmx*nmy;ix++){
-			d_g_wx[ix][iw] = d_xg[ix]/sqrtf((float) ntfft);
+			d_g_wx[ix][iw] = powf(w,2)*d_xg[ix]/sqrtf((float) ntfft);
 		}
 		free2complex(smig);
 	}
@@ -294,22 +290,21 @@ void ssop(complex *d_x,
 		bool src,
 		bool verbose)
 {
-
 	float kx,ky,s;
 	complex L;
 	int ik,ikx,iky,imx,imy; 
 	complex *d_k;
 	fftwf_complex *a,*b;
 	int lmx,lmy;
-
+	float w2;
 	if (nmx>100) lmx=30;
 	else lmx=0;
 	if (nmy>100) lmy=30;
 	else lmy=0;
-
 	a  = fftwf_malloc(sizeof(fftwf_complex) * nkx*nky);
 	b  = fftwf_malloc(sizeof(fftwf_complex) * nkx*nky);
 	d_k = alloc1complex(nkx*nky);
+	w2 = (w*w)*(po[iz]*po[iz]);
 	if (adj){
 		for(imx=0; imx<nkx;imx++){ 
 			for(imy=0; imy<nky;imy++){ 
@@ -330,7 +325,6 @@ void ssop(complex *d_x,
 			}
 		}
 	}
-
 	fftwf_execute_dft(p1,a,a); 
 	for (ikx=0;ikx<nkx;ikx++){
 		if (ikx<= (int) nkx/2) kx = (float) dkx*ikx;
@@ -338,9 +332,9 @@ void ssop(complex *d_x,
 		for (iky=0;iky<nky;iky++){
 			if (iky<= (int) nky/2) ky = (float) dky*iky;
 			else                           ky = -((float) dky*nky - dky*iky);
-			s = (w*w)*(po[iz]*po[iz]) - (kx*kx) - (ky*ky);
-			if (s>=0) L = cexp(I*sqrtf(s)*dz); 
-			else L = cexp(-0.2*sqrtf(fabs(s))*fabs(dz));
+			s = w2 - powf(kx,2) - powf(ky,2);
+			if (s>=0.0001) L = cexp(I*sqrtf(s)*dz); 
+			else L = 0.95;
 			d_k[ikx*nky + iky] = ((complex) a[ikx*nky + iky])*L/sqrtf((float) nkx*nky);        
 		}
 	}
@@ -355,9 +349,7 @@ void ssop(complex *d_x,
 				}
 			}
 		}
-
 		boundary_condition(d_x,nmx,lmx,nmy,lmy);    
-
 	}
 	else{
 		for(imx=0; imx<nkx;imx++){ 
@@ -368,11 +360,9 @@ void ssop(complex *d_x,
 			}
 		}
 	}
-
 	free1complex(d_k);
 	fftwf_free(a);
 	fftwf_free(b);
-
 
 	return;
 }
@@ -389,15 +379,16 @@ void pspiop(complex *d_x,
 		bool verbose)
 {
 
+
 	float kx,ky,s;
 	complex L;
-	int ik,ikx,iky,imx,imy; 
+	int ik,ikx,iky,imx,imy,ix; 
 	complex *d_k;
 	fftwf_complex *a,*b;
 	int lmx,lmy;
 	complex **dref;
 	int iref;
-	float v,vref1,vref2;
+	float v,vref1,vref2,aa,pd_ref,w2;
 	if (nmx>100) lmx=30;
 	else lmx=0;
 	if (nmy>100) lmy=30;
@@ -406,6 +397,7 @@ void pspiop(complex *d_x,
 	b  = fftwf_malloc(sizeof(fftwf_complex) * nkx*nky);
 	dref = alloc2complex(nref,nmx*nmy);
 	d_k = alloc1complex(nkx*nky);
+
 	if (adj){
 		for(imx=0; imx<nkx;imx++){ 
 			for(imy=0; imy<nky;imy++){ 
@@ -413,55 +405,88 @@ void pspiop(complex *d_x,
 				else a[imx*nky + imy] = 0.;
 			}
 		}
+		fftwf_execute_dft(p1,a,a);
+		for (iref=0;iref<nref;iref++){
+			w2 = (w/vref[iref][iz])*(w/vref[iref][iz]);
+			for (ikx=0;ikx<nkx;ikx++){
+				if (ikx<= (int) nkx/2) kx = (float) dkx*ikx;
+				else                   kx = -((float) dkx*nkx - dkx*ikx);
+				for (iky=0;iky<nky;iky++){
+					if (iky<= (int) nky/2) ky = (float) dky*iky;
+					else                   ky = -((float) dky*nky - dky*iky);
+					s = w2 - powf(kx,2) - powf(ky,2);
+					if (s>=0.0001) L = cexp(I*sqrtf(s)*dz); 
+					else L = 0.95;
+					d_k[ikx*nky + iky] = ((complex) a[ikx*nky + iky])*L/sqrtf((float) nkx*nky);
+				}
+			}
+			for(ik=0; ik<nkx*nky;ik++) b[ik] = (fftwf_complex) d_k[ik];
+			fftwf_execute_dft(p2,b,b);
+			for(imx=0; imx<nkx;imx++){ 
+				for(imy=0; imy<nky;imy++){ 
+					if (imx < nmx && imy < nmy){
+						pd_ref = (1.0/vel[imx*nmy + imy][iz]) - (1.0/vref[iref][iz]);
+						L = cexpf(I*w*pd_ref*dz);
+						dref[imx*nmy + imy][iref] = ((complex) b[imx*nky + imy])*L/sqrtf((float) nkx*nky);
+					}
+				}
+			}
+		}
+		for (ix=0;ix<nmx*nmy;ix++){
+			v = vel[ix][iz];
+			vref1 = vref[iref1[ix][iz]][iz];
+			vref2 = vref[iref2[ix][iz]][iz];
+			aa = linear_interp(vref1,vref2,v);
+			d_x[ix] = aa*dref[ix][iref1[ix][iz]] + (1.0-aa)*dref[ix][iref2[ix][iz]];
+		}
+		boundary_condition(d_x,nmx,lmx,nmy,lmy);
 	}
 	else{
-	//	boundary_condition(d_x,nmx,lmx,nmy,lmy);    
-		for(imx=0; imx<nkx;imx++){ 
-			for(imy=0; imy<nky;imy++){ 
-				if (imx < nmx && imy < nmy) a[imx*nky + imy] = d_x[imx*nmy + imy];
-				else a[imx*nky + imy] = 0.;
-			}
+		boundary_condition(d_x,nmx,lmx,nmy,lmy);    
+		for (ix=0;ix<nmx*nmy;ix++) for (iref=0;iref<nref;iref++) dref[ix][iref] = 0.0;
+		for (ix=0;ix<nmx*nmy;ix++){
+			v = vel[ix][iz];
+			vref1 = vref[iref1[ix][iz]][iz];
+			vref2 = vref[iref2[ix][iz]][iz];
+			aa = linear_interp(vref1,vref2,v);
+			dref[ix][iref1[ix][iz]] = aa*d_x[ix];
+			dref[ix][iref2[ix][iz]] = (1.0-aa)*d_x[ix];
 		}
-	}
-	fftwf_execute_dft(p1,a,a);
-	for (iref=0;iref<nref;iref++){
-		for (ikx=0;ikx<nkx;ikx++){
-			if (ikx<= (int) nkx/2) kx = (float) dkx*ikx;
-			else                           kx = -((float) dkx*nkx - dkx*ikx);
-			for (iky=0;iky<nky;iky++){
-				if (iky<= (int) nky/2) ky = (float) dky*iky;
-				else                           ky = -((float) dky*nky - dky*iky);
-				s = (w*w)*(1/(vref[iref][iz]*vref[iref][iz])) - (kx*kx) - (ky*ky);
-				if (s>=0) L = cexpf(I*sqrtf(s)*dz);
-				else L = cexpf(-0.2*sqrtf(fabs(s))*fabs(dz));
-				d_k[ikx*nky + iky] = ((complex) a[ikx*nky + iky])*L/sqrtf((float) nkx*nky);
+		for (ix=0;ix<nmx*nmy;ix++) d_x[ix] = 0.;
+		for (iref=0;iref<nref;iref++){
+			w2 = (w/vref[iref][iz])*(w/vref[iref][iz]);
+			for(imx=0; imx<nkx;imx++){
+				for(imy=0; imy<nky;imy++){ 
+					pd_ref = (1.0/vel[imx*nmy + imy][iz]) - (1.0/vref[iref][iz]);
+					L = cexpf(I*w*pd_ref*dz);  
+					if (imx < nmx && imy < nmy) a[imx*nky + imy] = dref[imx*nmy + imy][iref]*L;
+					else a[imx*nky + imy] = 0.;
+				}
 			}
-		}
-		for(ik=0; ik<nkx*nky;ik++) b[ik] = (fftwf_complex) d_k[ik];
-		fftwf_execute_dft(p2,b,b);
-		for(imx=0; imx<nkx;imx++){ 
-			for(imy=0; imy<nky;imy++){ 
-				if (imx < nmx && imy < nmy){
-					dref[imx*nmy + imy][iref] = ((complex) b[imx*nky + imy])/sqrtf((float) nkx*nky);
+			fftwf_execute_dft(p1,a,a);
+			for (ikx=0;ikx<nkx;ikx++){
+				if (ikx<= (int) nkx/2) kx = (float) dkx*ikx;
+				else                   kx = -((float) dkx*nkx - dkx*ikx);
+				for (iky=0;iky<nky;iky++){
+					if (iky<= (int) nky/2) ky = (float) dky*iky;
+					else                   ky = -((float) dky*nky - dky*iky);
+					s = w2 - powf(kx,2) - powf(ky,2);
+					if (s>=0.0001) L = cexp(I*sqrtf(s)*dz); 
+					else L = 0.95;
+					d_k[ikx*nky + iky] = ((complex) a[ikx*nky + iky])*L/sqrtf((float) nkx*nky);
+				}
+			}
+			for(ik=0; ik<nkx*nky;ik++) b[ik] = (fftwf_complex) d_k[ik];
+			fftwf_execute_dft(p2,b,b);
+			for(imx=0; imx<nkx;imx++){ 
+				for(imy=0; imy<nky;imy++){ 
+					if (imx < nmx && imy < nmy){
+						d_x[imx*nmy + imy] += ((complex) b[imx*nky + imy])/sqrtf((float) nkx*nky);
+					}
 				}
 			}
 		}
 	}
-	for (imx=0;imx<nmx*nmy;imx++){
-		v = vel[imx][iz];
-		vref1 = vref[iref1[imx][iz]][iz];
-		vref2 = vref[iref2[imx][iz]][iz];
-		if (vref2 - vref1 > 10.0){
-			d_x[imx] = linear_interp(dref[imx][iref1[imx][iz]],dref[imx][iref2[imx][iz]],vref1,vref2,v);
-		}
-		else{
-			d_x[imx] = dref[imx][iref1[imx][iz]];
-		}
-	}
-	//if (adj){
-	//	boundary_condition(d_x,nmx,lmx,nmy,lmy);    
-	//}
-
 	free1complex(d_k);
 	fftwf_free(a);
 	fftwf_free(b);
@@ -470,11 +495,12 @@ void pspiop(complex *d_x,
 	return;
 }
 
-float linear_interp(complex y1,complex y2,float x1,float x2,float x)
-	/*< linear interpolation between two points. x2-x1 must be nonzero. >*/
-{
-	//return  y1 + (y2-y1)*(x-x1)/(x2-x1);
-	return  y1;
+float linear_interp(float x1,float x2,float x)
+	/*< adjoint of linear interpolation between two points. aa is a scalar between 1 and 0 that is applied as aa*y1 and (1-aa)*y2 >*/
+{	
+	float aa;
+	aa = x2 - x1 > 1.0 ? (x2-x)/(x2-x1) : 0.0;
+	return  aa;
 }
 
 void f_op(complex *m,float *d,int nw,int nt,bool adj)

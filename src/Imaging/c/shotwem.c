@@ -12,12 +12,12 @@ void docs () {
 int main (int argc, char *argv[])
 {
 	char d_name[512],m_name[512],vel_name[512],wav_name[512];
-	struct SeisHeader *h_d;
-	struct SeisHeader *h_m;
-	struct SeisHeader *h_vel;
-	struct SeisHeader *h_wav;
+	struct SeisHeader *h_d=NULL;
+	struct SeisHeader *h_m=NULL;
+	struct SeisHeader *h_vel=NULL;
+	struct SeisHeader *h_wav=NULL;
 	int nx,ny,nz,nt,ix,iz,it,nref;
-	float **d,**m,**vel,**wav,sx,sy,sz,gz;
+	float **d=NULL,**m=NULL,**vel=NULL,**wav=NULL,sx,sy,sz,gz;
 	float ox,dx,oy,dy,oz,dz,ot,dt,fmin,fmax;
 	int ntraces;
 	int padt,padx;
@@ -113,8 +113,8 @@ int main (int argc, char *argv[])
 	if (adj){
 		for (ix=0;ix<nx*ny;ix++) h_m[ix].mx = h_d[ix].gx;
 		for (ix=0;ix<nx*ny;ix++) h_m[ix].my = h_d[ix].gy;
-		for (ix=0;ix<nx*ny;ix++) h_m[ix].imx = (int) truncf((h_m[ix].mx - ox)/dx);
-		for (ix=0;ix<nx*ny;ix++) h_m[ix].imy = (int) truncf((h_m[ix].my - oy)/dy);
+		for (ix=0;ix<nx*ny;ix++) h_m[ix].imx = (int) (h_m[ix].mx - ox)/dx;
+		for (ix=0;ix<nx*ny;ix++) h_m[ix].imy = (int) (h_m[ix].my - oy)/dy;
 		InitFileHeader(&fh);
 		fh.n1 = nz; fh.o1 = oz; fh.d1 = dz;
 		fh.n2 = nx; fh.o2 = ox; fh.d2 = dx;

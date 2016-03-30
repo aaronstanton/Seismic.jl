@@ -36,7 +36,7 @@
 
 """
 
-function ShotProfileWEM(m::ASCIIString,d::ASCIIString,adj=true;pspi=true,nref=5,damping=1000.,vel="vel",angx="angx",angy="angy",wav="wav",sz=0.,gz=0.,nangx=1,oangx=0,dangx=1,nangy=1,oangy=0,dangy=1,fmin=0,fmax=80,padt=2,padx=2,verbose=false,sx=[0],sy=[0])
+function ShotProfileWEM(m::ASCIIString,d::ASCIIString,adj=true;pspi=true,nref=5,vel="vel",angx="angx",angy="angy",wav="wav",sz=0.,gz=0.,nangx=1,oangx=0,dangx=1,nangy=1,oangy=0,dangy=1,fmin=0,fmax=80,padt=2,padx=2,verbose=false,sx=[0],sy=[0])
 	
 	nshot = length(sx)	
 	v,h,e = SeisRead(vel)
@@ -68,14 +68,13 @@ function ShotProfileWEM(m::ASCIIString,d::ASCIIString,adj=true;pspi=true,nref=5,
 
 	shot_list = Array(Shot,nshot)
 	for ishot = 1 : nshot
-		shot_list[ishot] = Shot(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+		shot_list[ishot] = Shot(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
 		shot_list[ishot].m = join([m "_shot_" Int(floor(sx[ishot])) "_" Int(floor(sy[ishot]))])
 		shot_list[ishot].d = join([d "_shot_" Int(floor(sx[ishot])) "_" Int(floor(sy[ishot]))])
 		shot_list[ishot].angx = join([angx "_shot_" Int(floor(sx[ishot])) "_" Int(floor(sy[ishot]))])
 		shot_list[ishot].angy = join([angy "_shot_" Int(floor(sx[ishot])) "_" Int(floor(sy[ishot]))])
 		shot_list[ishot].vel = vel
 		shot_list[ishot].wav = wav
-		shot_list[ishot].damping = damping
 		shot_list[ishot].sx = sx[ishot]
 		shot_list[ishot].sy = sy[ishot]
 		shot_list[ishot].sz = sz
@@ -142,8 +141,6 @@ function ShotProfileWEM(m::ASCIIString,d::ASCIIString,adj=true;pspi=true,nref=5,
 		stream_m = open(m_m,"a+")
 		stream_h = open(m_h,"a+")
 		for ishot = 1 : nshot
-
-			# println("reading ",shot_list[ishot].m)
 			m_shot,h_shot  = SeisRead(shot_list[ishot].m)
 			if (nangx != 1 || nangy != 1)
 				angx_shot,h_ang,extent = SeisRead(shot_list[ishot].angx)
@@ -316,7 +313,6 @@ type Shot
 	angx
 	angy
 	wav
-	damping
 	sx
 	sy
 	sz
@@ -340,7 +336,7 @@ function shotwem(shot)
 	join(["pspi=",shot.pspi]), 
 	join(["nref=",shot.nref]), 
 	join(["d=",shot.d]), join(["m=",shot.m]), join(["vel=",shot.vel]),  join(["wav=",shot.wav]),  
-	join(["damping=",shot.damping]), join(["sx=",shot.sx]), join(["sy=",shot.sy]),  join(["sz=",shot.sz]),  join(["gz=",shot.gz]), 
+	join(["sx=",shot.sx]), join(["sy=",shot.sy]),  join(["sz=",shot.sz]),  join(["gz=",shot.gz]), 
 	join(["fmin=",shot.fmin]),  join(["fmax=",shot.fmax]), 
 	join(["padt=",shot.padt]),  join(["padx=",shot.padx]), 
 	join(["verbose=",shot.verbose]) ] 

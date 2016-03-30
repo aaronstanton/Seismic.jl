@@ -8,10 +8,10 @@ void ewem(float **ux, float **uy, float **uz,
           int nmy,float omy, float dmy,
           float sx,float sy,
           int nz, float oz, float dz, float gz, float sz,
-          float **vp, float **vs, 
+          float **velp, float **vels, int nref,
           float fmin, float fmax,
           int padt, int padx,
-          bool adj, bool verbose);
+          bool adj, bool pspi, bool verbose);
 void elastic_extrap1f(float **mpp, float **mps1, float **mps2,
                       complex **ux_g_wx, complex **uy_g_wx, complex **uz_g_wx, 
                       complex **u_s_wx,
@@ -22,8 +22,10 @@ void elastic_extrap1f(float **mpp, float **mps1, float **mps2,
                       int nthread,
                       float **vp,float *po_p,float **pd_p,
                       float **vs,float *po_s,float **pd_s,
+                      float **vpref, int **ipref1, int **ipref2, int nref,
+                      float **vsref, int **isref1, int **isref2,
                       fftwf_plan p1,fftwf_plan p2,
-                      bool adj, bool verbose);
+                      bool adj, bool pspi, bool verbose);
 void ssop(complex *d_x,
           float w,float dkx,float dky,int nkx,int nky,int nmx,float omx,float dmx,int nmy,float omy,float dmy,float dz,int iz,
           float **v,float *po,float **pd,
@@ -31,6 +33,15 @@ void ssop(complex *d_x,
           bool adj,
           bool src,
           bool verbose);
+void pspiop(complex *d_x,
+		float w,float dkx,float dky,int nkx,int nky,int nmx,float omx,float dmx,int nmy,float omy,float dmy,float dz,int iz,
+		float **vel,float *po,float **pd,
+		float **vref, int **iref1, int **iref2, int nref,
+		fftwf_plan p1,fftwf_plan p2,
+		bool adj, 
+		bool src,
+		bool verbose);
+float linear_interp(float x1,float x2,float x);
 void f_op(complex *m,float *d,int nw,int nt,bool adj);
 void progress_msg(float progress);
 float signf(float a);

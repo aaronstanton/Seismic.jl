@@ -1,7 +1,7 @@
 SHELL = /bin/sh
 
-CC = gcc-5 -std=c99 -fPIC
-CFLAGS = -shared -dynamiclib -fopenmp -Wall 
+CC = gcc-5 -std=c99 -O3 -fPIC
+CFLAGS = -shared -dynamiclib -fopenmp -Wall
 INCLUDES = -I. -I${SEISMIC_PATH}/src/API/c -I/usr/local/include
 LIBS =  -lm -lfftw3f -L/usr/local/lib
 

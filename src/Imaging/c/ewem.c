@@ -8,10 +8,10 @@ void ewem(float **ux, float **uy, float **uz,
 	  int nmy,float omy, float dmy,
 	  float sx,float sy,
 	  int nz, float oz, float dz, float gz, float sz,
-	  float **vp, float **vs, 
+	  float **velp, float **vels, int nref, 
 	  float fmin, float fmax,
 	  int padt, int padx,
-	  bool adj, bool verbose)
+	  bool adj, bool pspi, bool verbose)
 /*< elastic wave equation depth migration operator. >*/
 {
 	int iz,ix,imx,imy,igx,igy,ik,iw,it,nw,nkx,nky,ntfft;
@@ -29,7 +29,96 @@ void ewem(float **ux, float **uy, float **uz,
 	int ithread,nthread;
 	float max_source;
 	float **mpp_threads,**mps1_threads,**mps2_threads;
+	float **vpref,vpmin,vpmax,vp;
+	int **ipref1,**ipref2;
+	float **vsref,vsmin,vsmax,vs;
+	int **isref1,**isref2;
+	int iref;
 	
+	/* decompose slowness into layer average, and layer purturbation */
+	po_p = alloc1float(nz); 
+	pd_p = alloc2float(nz,nmx*nmy); 
+	for (iz=0;iz<nz;iz++){
+		po_p[iz] = 0.;
+		for (ix=0;ix<nmx*nmy;ix++) po_p[iz] += velp[ix][iz];
+		po_p[iz] /= (float) nmx*nmy;
+		po_p[iz]  = 1./po_p[iz];
+		for (ix=0;ix<nmx*nmy;ix++) pd_p[ix][iz] = 1.0/velp[ix][iz] - po_p[iz];
+	}
+	po_s = alloc1float(nz); 
+	pd_s = alloc2float(nz,nmx*nmy); 
+	for (iz=0;iz<nz;iz++){
+		po_s[iz] = 0.;
+		for (ix=0;ix<nmx*nmy;ix++) po_s[iz] += vels[ix][iz];
+		po_s[iz] /= (float) nmx*nmy;
+		po_s[iz]  = 1./po_s[iz];
+		for (ix=0;ix<nmx*nmy;ix++) pd_s[ix][iz] = 1.0/vels[ix][iz] - po_s[iz];
+	}
+
+	// P wave reference velocities
+	/****************************************************************************************/
+	/* generate reference velocities for each depth step */
+	vpref = alloc2float(nz,nref); /* reference velocities for each layer */
+	ipref1 = alloc2int(nz,nmx*nmy); /* index of nearest lower reference velocity for each subsurface point */
+	ipref2 = alloc2int(nz,nmx*nmy); /* index of nearest upper reference velocity for each subsurface point */
+	for (iz=0;iz<nz;iz++){
+		vpmin=velp[0][iz];
+		for (ix=0;ix<nmx;ix++) if (velp[ix][iz] < vpmin) vpmin = velp[ix][iz];
+		vpmax=velp[nmx-1][iz];
+		for (ix=0;ix<nmx*nmy;ix++) if (velp[ix][iz] > vpmax) vpmax = velp[ix][iz];
+
+		for (iref=0;iref<nref;iref++) vpref[iref][iz] = vpmin + (float) iref*(vpmax-vpmin)/((float) nref-1);
+		for (ix=0;ix<nmx*nmy;ix++){
+			vp = velp[ix][iz];
+			if (vpmax>vpmin+10){
+				iref = (int) (nref-1)*(vp-vpmin)/(vpmax-vpmin);
+				ipref1[ix][iz] = iref;
+				ipref2[ix][iz] = iref+1;
+				if (iref>nref-2){
+					ipref1[ix][iz] = nref-1;
+					ipref2[ix][iz] = nref-1;
+				}
+			}
+			else{
+				ipref1[ix][iz] = 0;
+				ipref2[ix][iz] = 0;
+			}
+		}
+	}
+	/****************************************************************************************/
+
+	// S wave reference velocities
+	/****************************************************************************************/
+	/* generate reference velocities for each depth step */
+	vsref = alloc2float(nz,nref); /* reference velocities for each layer */
+	isref1 = alloc2int(nz,nmx*nmy); /* index of nearest lower reference velocity for each subsurface point */
+	isref2 = alloc2int(nz,nmx*nmy); /* index of nearest upper reference velocity for each subsurface point */
+	for (iz=0;iz<nz;iz++){
+		vsmin=vels[0][iz];
+		for (ix=0;ix<nmx;ix++) if (vels[ix][iz] < vsmin) vsmin = vels[ix][iz];
+		vsmax=vels[nmx-1][iz];
+		for (ix=0;ix<nmx*nmy;ix++) if (vels[ix][iz] > vsmax) vsmax = vels[ix][iz];
+
+		for (iref=0;iref<nref;iref++) vsref[iref][iz] = vsmin + (float) iref*(vsmax-vsmin)/((float) nref-1);
+		for (ix=0;ix<nmx*nmy;ix++){
+			vs = vels[ix][iz];
+			if (vsmax>vsmin+10){
+				iref = (int) (nref-1)*(vs-vsmin)/(vsmax-vsmin);
+				isref1[ix][iz] = iref;
+				isref2[ix][iz] = iref+1;
+				if (iref>nref-2){
+					isref1[ix][iz] = nref-1;
+					isref2[ix][iz] = nref-1;
+				}
+			}
+			else{
+				isref1[ix][iz] = 0;
+				isref2[ix][iz] = 0;
+			}
+		}
+	}
+	/****************************************************************************************/
+		
 	if (adj){
 		for (ix=0;ix<nmx*nmy;ix++) for (iz=0;iz<nz;iz++) mpp[ix][iz] = 0.;
 		for (ix=0;ix<nmx*nmy;ix++) for (iz=0;iz<nz;iz++) mps1[ix][iz] = 0.;
@@ -60,26 +149,6 @@ void ewem(float **ux, float **uy, float **uz,
 	for (it=0;it<nt;it++)  d_t[it] = 0.;  
 	for (iw=0;iw<nw;iw++)  d_w[iw] = 0.; 
 
-	/* decompose slowness into layer average, and layer purturbation */
-	po_p = alloc1float(nz); 
-	pd_p = alloc2float(nz,nmx*nmy); 
-	for (iz=0;iz<nz;iz++){
-		po_p[iz] = 0.;
-		for (ix=0;ix<nmx*nmy;ix++) po_p[iz] += vp[ix][iz];
-		po_p[iz] /= (float) nmx*nmy;
-		po_p[iz]  = 1./po_p[iz];
-		for (ix=0;ix<nmx*nmy;ix++) pd_p[ix][iz] = 1.0/vp[ix][iz] - po_p[iz];
-	}
-	po_s = alloc1float(nz); 
-	pd_s = alloc2float(nz,nmx*nmy); 
-	for (iz=0;iz<nz;iz++){
-		po_s[iz] = 0.;
-		for (ix=0;ix<nmx*nmy;ix++) po_s[iz] += vs[ix][iz];
-		po_s[iz] /= (float) nmx*nmy;
-		po_s[iz]  = 1./po_s[iz];
-		for (ix=0;ix<nmx*nmy;ix++) pd_s[ix][iz] = 1.0/vs[ix][iz] - po_s[iz];
-	}
-
 	/* set up fftw plans and pass them to the OMP region of the code */
 	a  = fftwf_malloc(sizeof(fftwf_complex) * nkx*nky);
 	b  = fftwf_malloc(sizeof(fftwf_complex) * nkx*nky);
@@ -96,18 +165,13 @@ void ewem(float **ux, float **uy, float **uz,
 	fftwf_execute_dft(p2,b,b);
 
 	/**********************************************************************/
-	igx = (int) truncf((sx - omx)/dmx); /*position to inject source in x-dir*/
-	igy = (int) truncf((sy - omy)/dmy); /*position to inject source in y-dir*/
-
-	//fprintf(stderr,"adj=%d igx=%d\n",adj,igx);
-	//fprintf(stderr,"adj=%d igy=%d\n",adj,igy);
-
+	igx = (int) (sx - omx)/dmx; /*position to inject source in x-dir*/
+	igy = (int) (sy - omy)/dmy; /*position to inject source in y-dir*/
 	/* source wavefield*/
 	for (ix=0;ix<nmx*nmy;ix++) for (iw=0;iw<nw;iw++) u_s_wx[ix][iw] = 0.;
 	for (it=0;it<nt;it++) d_t[it] = wav[0][it];
 	f_op(d_w,d_t,nw,nt,1); /* d_t to d_w */
 	for (iw=0;iw<nw;iw++) u_s_wx[igx*nmy + igy][iw] = d_w[iw];
-
 	/* receiver wavefield*/
 	if (adj){
 		for (ix=0;ix<nmx*nmy;ix++){
@@ -188,8 +252,10 @@ void ewem(float **ux, float **uy, float **uz,
 				dw,dkx,dky,nkx,nky,
 				nz,oz,dz,gz,sz,nmx,omx,dmx,nmy,omy,dmy,
 				nthread,
-				vp,po_p,pd_p,vs,po_s,pd_s,
-				p1,p2,adj,verbose);
+				velp,po_p,pd_p,vels,po_s,pd_s,
+				vpref,ipref1,ipref2,nref,
+				vsref,isref1,isref2,
+				p1,p2,adj,pspi,verbose);
 	}
 	if (verbose) fprintf(stderr,"\n");
 
@@ -245,6 +311,9 @@ void ewem(float **ux, float **uy, float **uz,
 	free2float(pd_p);
 	free1float(po_s);
 	free2float(pd_s);
+	free2float(vpref);
+	free2int(ipref1);
+	free2int(ipref2);
 	free2float(mpp_threads);
 	free2float(mps1_threads);
 	free2float(mps2_threads);
@@ -262,8 +331,10 @@ void elastic_extrap1f(float **mpp, float **mps1, float **mps2,
 		int nthread,
 		float **vp,float *po_p,float **pd_p,
 		float **vs,float *po_s,float **pd_s,
+		float **vpref, int **ipref1, int **ipref2, int nref,
+		float **vsref, int **isref1, int **isref2,
 		fftwf_plan p1,fftwf_plan p2,
-		bool adj, bool verbose)
+		bool adj, bool pspi, bool verbose)
 /*< extrapolate 1 frequency >*/
 {
 	float w,factor,z;
@@ -298,15 +369,16 @@ void elastic_extrap1f(float **mpp, float **mps1, float **mps2,
 	w = iw*dw;
 	for (ix=0;ix<nmx*nmy;ix++){ 
 		up_xs[ix] = u_s_wx[ix][iw]/sqrtf((float) ntfft);
-		ux_xg[ix] = ux_g_wx[ix][iw]/sqrtf((float) ntfft);
-		uy_xg[ix] = uy_g_wx[ix][iw]/sqrtf((float) ntfft);
-		uz_xg[ix] = uz_g_wx[ix][iw]/sqrtf((float) ntfft);
+		ux_xg[ix] = powf(w,2)*ux_g_wx[ix][iw]/sqrtf((float) ntfft);
+		uy_xg[ix] = powf(w,2)*uy_g_wx[ix][iw]/sqrtf((float) ntfft);
+		uz_xg[ix] = powf(w,2)*uz_g_wx[ix][iw]/sqrtf((float) ntfft);
 	}
 	for (ix=0;ix<nmx*nmy;ix++) up_xs[ix] = u_s_wx[ix][iw]/sqrtf((float) ntfft);
 	for (iz=0;iz<nz;iz++){ // extrapolate source wavefield 
 		z = oz + dz*iz;
 		if (z >= sz){
-			ssop(up_xs,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,-dz,iz,vp,po_p,pd_p,p1,p2,true,true,verbose);
+			if (pspi) pspiop(up_xs,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,-dz,iz,vp,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,true,true,verbose);
+			else 	  ssop(up_xs,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,-dz,iz,vp,po_p,pd_p,p1,p2,true,true,verbose);
 			for (ix=0;ix<nmx*nmy;ix++) smig[ix][iz]  = up_xs[ix]/max_source;
 		}
 		else{
@@ -318,9 +390,16 @@ void elastic_extrap1f(float **mpp, float **mps1, float **mps2,
 			z = oz + dz*iz;
 			if (z >= gz){
 				elastic_separate_3d(ux_xg,uy_xg,uz_xg,up_xg,us1_xg,us2_xg,w,dkx,nkx,nmx,omx,dmx,dky,nky,nmy,omy,dmy,1./po_p[iz],1./po_s[iz],p1,p2,true,adj);
-				ssop(up_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,vp,po_p,pd_p,p1,p2,true,false,verbose);
-				ssop(us1_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,vs,po_s,pd_s,p1,p2,true,false,verbose);
-				ssop(us2_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,vs,po_s,pd_s,p1,p2,true,false,verbose);
+				if (pspi){ 
+					pspiop(up_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,vp,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,true,false,verbose);
+					pspiop(us1_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,vs,po_s,pd_s,vsref,isref1,isref2,nref,p1,p2,true,false,verbose);
+					pspiop(us2_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,vs,po_s,pd_s,vsref,isref1,isref2,nref,p1,p2,true,false,verbose);
+				}
+				else{
+					ssop(up_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,vp,po_p,pd_p,p1,p2,true,false,verbose);
+					ssop(us1_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,vs,po_s,pd_s,p1,p2,true,false,verbose);
+					ssop(us2_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,vs,po_s,pd_s,p1,p2,true,false,verbose);
+				}
 				elastic_separate_3d(ux_xg,uy_xg,uz_xg,up_xg,us1_xg,us2_xg,w,dkx,nkx,nmx,omx,dmx,dky,nky,nmy,omy,dmy,1./po_p[iz],1./po_s[iz],p1,p2,false,adj);
 				for (imx=0;imx<nmx;imx++){ 
 					for (imy=0;imy<nmy;imy++){
@@ -340,16 +419,23 @@ void elastic_extrap1f(float **mpp, float **mps1, float **mps2,
 				for (ix=0;ix<nmx*nmy;ix++) up_xg[ix]  += smig[ix][iz]*mpp[ix][iz];
 				for (ix=0;ix<nmx*nmy;ix++) us1_xg[ix] += smig[ix][iz]*mps1[ix][iz];
 				for (ix=0;ix<nmx*nmy;ix++) us2_xg[ix] += smig[ix][iz]*mps2[ix][iz];
-				ssop(up_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,-dz,iz,vp,po_p,pd_p,p1,p2,false,false,verbose);
-				ssop(us1_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,-dz,iz,vs,po_s,pd_s,p1,p2,false,false,verbose);
-				ssop(us2_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,-dz,iz,vs,po_s,pd_s,p1,p2,false,false,verbose);
+				if (pspi){ 
+					pspiop(up_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,-dz,iz,vp,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,false,false,verbose);
+					pspiop(us1_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,-dz,iz,vs,po_s,pd_s,vsref,isref1,isref2,nref,p1,p2,false,false,verbose);
+					pspiop(us2_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,-dz,iz,vs,po_s,pd_s,vsref,isref1,isref2,nref,p1,p2,false,false,verbose);
+				}
+				else{
+					ssop(up_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,-dz,iz,vp,po_p,pd_p,p1,p2,false,false,verbose);
+					ssop(us1_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,-dz,iz,vs,po_s,pd_s,p1,p2,false,false,verbose);
+					ssop(us2_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,-dz,iz,vs,po_s,pd_s,p1,p2,false,false,verbose);
+				}
 				elastic_separate_3d(ux_xg,uy_xg,uz_xg,up_xg,us1_xg,us2_xg,w,dkx,nkx,nmx,omx,dmx,dky,nky,nmy,omy,dmy,1./po_p[iz],1./po_s[iz],p1,p2,false,adj);
 			}
 		}
 		for (ix=0;ix<nmx*nmy;ix++){
-			ux_g_wx[ix][iw] = ux_xg[ix]/sqrtf((float) ntfft);
-			uy_g_wx[ix][iw] = uy_xg[ix]/sqrtf((float) ntfft);
-			uz_g_wx[ix][iw] = uz_xg[ix]/sqrtf((float) ntfft);
+			ux_g_wx[ix][iw] = powf(w,2)*ux_xg[ix]/sqrtf((float) ntfft);
+			uy_g_wx[ix][iw] = powf(w,2)*uy_xg[ix]/sqrtf((float) ntfft);
+			uz_g_wx[ix][iw] = powf(w,2)*uz_xg[ix]/sqrtf((float) ntfft);
 		}
 	}
 
@@ -366,30 +452,28 @@ void elastic_extrap1f(float **mpp, float **mps1, float **mps2,
 }
 
 void ssop(complex *d_x,
-	float w,float dkx,float dky,int nkx,int nky,int nmx,float omx,float dmx,int nmy,float omy,float dmy,float dz,int iz,
-	float **v,float *po,float **pd,
-	fftwf_plan p1,fftwf_plan p2,
-	bool adj, 
-	bool src,
-	bool verbose)
+		float w,float dkx,float dky,int nkx,int nky,int nmx,float omx,float dmx,int nmy,float omy,float dmy,float dz,int iz,
+		float **v,float *po,float **pd,
+		fftwf_plan p1,fftwf_plan p2,
+		bool adj, 
+		bool src,
+		bool verbose)
 {
-
 	float kx,ky,s;
 	complex L;
 	int ik,ikx,iky,imx,imy; 
 	complex *d_k;
 	fftwf_complex *a,*b;
 	int lmx,lmy;
-
+	float w2;
 	if (nmx>100) lmx=30;
 	else lmx=0;
 	if (nmy>100) lmy=30;
 	else lmy=0;
-
 	a  = fftwf_malloc(sizeof(fftwf_complex) * nkx*nky);
 	b  = fftwf_malloc(sizeof(fftwf_complex) * nkx*nky);
 	d_k = alloc1complex(nkx*nky);
-
+	w2 = (w*w)*(po[iz]*po[iz]);
 	if (adj){
 		for(imx=0; imx<nkx;imx++){ 
 			for(imy=0; imy<nky;imy++){ 
@@ -410,15 +494,16 @@ void ssop(complex *d_x,
 			}
 		}
 	}
-
 	fftwf_execute_dft(p1,a,a); 
 	for (ikx=0;ikx<nkx;ikx++){
-			kx = ikx<nkx/2. ? dkx*ikx : -(dkx*nkx - dkx*ikx);
+		if (ikx<= (int) nkx/2) kx = (float) dkx*ikx;
+		else                           kx = -((float) dkx*nkx - dkx*ikx);
 		for (iky=0;iky<nky;iky++){
-			ky = iky<nky/2. ? dky*iky : -(dky*nky - dky*iky);
-			s = (w*w)*(po[iz]*po[iz]) - (kx*kx) - (ky*ky);
-			if (s>=0) L = cexpf(I*sqrtf(s)*dz); 
-			else L = cexpf(-0.2*sqrtf(fabsf(s))*fabsf(dz));
+			if (iky<= (int) nky/2) ky = (float) dky*iky;
+			else                           ky = -((float) dky*nky - dky*iky);
+			s = w2 - powf(kx,2) - powf(ky,2);
+			if (s>=0.0001) L = cexp(I*sqrtf(s)*dz); 
+			else L = 0.95;
 			d_k[ikx*nky + iky] = ((complex) a[ikx*nky + iky])*L/sqrtf((float) nkx*nky);        
 		}
 	}
@@ -433,9 +518,7 @@ void ssop(complex *d_x,
 				}
 			}
 		}
-
 		boundary_condition(d_x,nmx,lmx,nmy,lmy);    
-
 	}
 	else{
 		for(imx=0; imx<nkx;imx++){ 
@@ -446,13 +529,147 @@ void ssop(complex *d_x,
 			}
 		}
 	}
-
 	free1complex(d_k);
 	fftwf_free(a);
 	fftwf_free(b);
 
+	return;
+}
+
+void pspiop(complex *d_x,
+		float w,float dkx,float dky,int nkx,int nky,
+		int nmx,float omx,float dmx,int nmy,float omy,float dmy,
+		float dz,int iz,
+		float **vel,float *po,float **pd,
+		float **vref, int **iref1, int **iref2, int nref,
+		fftwf_plan p1,fftwf_plan p2,
+		bool adj, 
+		bool src,
+		bool verbose)
+{
+
+
+	float kx,ky,s;
+	complex L;
+	int ik,ikx,iky,imx,imy,ix; 
+	complex *d_k;
+	fftwf_complex *a,*b;
+	int lmx,lmy;
+	complex **dref;
+	int iref;
+	float v,vref1,vref2,aa,pd_ref,w2;
+	if (nmx>100) lmx=30;
+	else lmx=0;
+	if (nmy>100) lmy=30;
+	else lmy=0;
+	a  = fftwf_malloc(sizeof(fftwf_complex) * nkx*nky);
+	b  = fftwf_malloc(sizeof(fftwf_complex) * nkx*nky);
+	dref = alloc2complex(nref,nmx*nmy);
+	d_k = alloc1complex(nkx*nky);
+
+	if (adj){
+		for(imx=0; imx<nkx;imx++){ 
+			for(imy=0; imy<nky;imy++){ 
+				if (imx < nmx && imy < nmy) a[imx*nky + imy] = d_x[imx*nmy + imy];
+				else a[imx*nky + imy] = 0.;
+			}
+		}
+		fftwf_execute_dft(p1,a,a);
+		for (iref=0;iref<nref;iref++){
+			w2 = (w/vref[iref][iz])*(w/vref[iref][iz]);
+			for (ikx=0;ikx<nkx;ikx++){
+				if (ikx<= (int) nkx/2) kx = (float) dkx*ikx;
+				else                   kx = -((float) dkx*nkx - dkx*ikx);
+				for (iky=0;iky<nky;iky++){
+					if (iky<= (int) nky/2) ky = (float) dky*iky;
+					else                   ky = -((float) dky*nky - dky*iky);
+					s = w2 - powf(kx,2) - powf(ky,2);
+					if (s>=0.0001) L = cexp(I*sqrtf(s)*dz); 
+					else L = 0.95;
+					d_k[ikx*nky + iky] = ((complex) a[ikx*nky + iky])*L/sqrtf((float) nkx*nky);
+				}
+			}
+			for(ik=0; ik<nkx*nky;ik++) b[ik] = (fftwf_complex) d_k[ik];
+			fftwf_execute_dft(p2,b,b);
+			for(imx=0; imx<nkx;imx++){ 
+				for(imy=0; imy<nky;imy++){ 
+					if (imx < nmx && imy < nmy){
+						pd_ref = (1.0/vel[imx*nmy + imy][iz]) - (1.0/vref[iref][iz]);
+						L = cexpf(I*w*pd_ref*dz);
+						dref[imx*nmy + imy][iref] = ((complex) b[imx*nky + imy])*L/sqrtf((float) nkx*nky);
+					}
+				}
+			}
+		}
+		for (ix=0;ix<nmx*nmy;ix++){
+			v = vel[ix][iz];
+			vref1 = vref[iref1[ix][iz]][iz];
+			vref2 = vref[iref2[ix][iz]][iz];
+			aa = linear_interp(vref1,vref2,v);
+			d_x[ix] = aa*dref[ix][iref1[ix][iz]] + (1.0-aa)*dref[ix][iref2[ix][iz]];
+		}
+		boundary_condition(d_x,nmx,lmx,nmy,lmy);
+	}
+	else{
+		boundary_condition(d_x,nmx,lmx,nmy,lmy);    
+		for (ix=0;ix<nmx*nmy;ix++) for (iref=0;iref<nref;iref++) dref[ix][iref] = 0.0;
+		for (ix=0;ix<nmx*nmy;ix++){
+			v = vel[ix][iz];
+			vref1 = vref[iref1[ix][iz]][iz];
+			vref2 = vref[iref2[ix][iz]][iz];
+			aa = linear_interp(vref1,vref2,v);
+			dref[ix][iref1[ix][iz]] = aa*d_x[ix];
+			dref[ix][iref2[ix][iz]] = (1.0-aa)*d_x[ix];
+		}
+		for (ix=0;ix<nmx*nmy;ix++) d_x[ix] = 0.;
+		for (iref=0;iref<nref;iref++){
+			w2 = (w/vref[iref][iz])*(w/vref[iref][iz]);
+			for(imx=0; imx<nkx;imx++){
+				for(imy=0; imy<nky;imy++){ 
+					pd_ref = (1.0/vel[imx*nmy + imy][iz]) - (1.0/vref[iref][iz]);
+					L = cexpf(I*w*pd_ref*dz);  
+					if (imx < nmx && imy < nmy) a[imx*nky + imy] = dref[imx*nmy + imy][iref]*L;
+					else a[imx*nky + imy] = 0.;
+				}
+			}
+			fftwf_execute_dft(p1,a,a);
+			for (ikx=0;ikx<nkx;ikx++){
+				if (ikx<= (int) nkx/2) kx = (float) dkx*ikx;
+				else                   kx = -((float) dkx*nkx - dkx*ikx);
+				for (iky=0;iky<nky;iky++){
+					if (iky<= (int) nky/2) ky = (float) dky*iky;
+					else                   ky = -((float) dky*nky - dky*iky);
+					s = w2 - powf(kx,2) - powf(ky,2);
+					if (s>=0.0001) L = cexp(I*sqrtf(s)*dz); 
+					else L = 0.95;
+					d_k[ikx*nky + iky] = ((complex) a[ikx*nky + iky])*L/sqrtf((float) nkx*nky);
+				}
+			}
+			for(ik=0; ik<nkx*nky;ik++) b[ik] = (fftwf_complex) d_k[ik];
+			fftwf_execute_dft(p2,b,b);
+			for(imx=0; imx<nkx;imx++){ 
+				for(imy=0; imy<nky;imy++){ 
+					if (imx < nmx && imy < nmy){
+						d_x[imx*nmy + imy] += ((complex) b[imx*nky + imy])/sqrtf((float) nkx*nky);
+					}
+				}
+			}
+		}
+	}
+	free1complex(d_k);
+	fftwf_free(a);
+	fftwf_free(b);
+	free2complex(dref);
 
 	return;
+}
+
+float linear_interp(float x1,float x2,float x)
+	/*< adjoint of linear interpolation between two points. aa is a scalar between 1 and 0 that is applied as aa*y1 and (1-aa)*y2 >*/
+{	
+	float aa;
+	aa = x2 - x1 > 1.0 ? (x2-x)/(x2-x1) : 0.0;
+	return  aa;
 }
 
 void f_op(complex *m,float *d,int nw,int nt,bool adj)

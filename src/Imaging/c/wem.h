@@ -6,7 +6,7 @@ void wem(float **d, float **m, float **wav,
          int nmy,float omy, float dmy,
          float sx,float sy,
          int nz, float oz, float dz, float gz, float sz,
-         float **vel_src, int nref, float fmin, float fmax,
+         float **vel, int nref, float fmin, float fmax,
          int padt, int padx,
          bool adj, bool pspi, bool verbose);
 void extrap1f(float **m,complex **d_g_wx, complex **d_s_wx,
@@ -34,7 +34,7 @@ void pspiop(complex *d_x,
 		bool adj, 
 		bool src,
 		bool verbose);
-float linear_interp(complex y1,complex y2,float x1,float x2,float x);
+float linear_interp(float x1,float x2,float x);
 void f_op(complex *m,float *d,int nw,int nt,bool adj);
 void progress_msg(float progress);
 float signf(float a);
