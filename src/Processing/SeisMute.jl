@@ -25,31 +25,26 @@ function SeisMute(in,h::Array{Header,1};offset=[0],tmute=0.,vmute=1500.,taper=0.
 	for itrace = 1 : nx
 		push!(offset,sqrt((h[itrace].gx - h[itrace].sx)^2 + (h[itrace].gy - h[itrace].sy)^2 ))
 	end
-	out = SeisMute(in,offset=offset,tmute=tmute,vmute=vmute,taper=taper,dt=h[1].dt)	
+	out = SeisMute(in,offset=offset,tmute=tmute,vmute=vmute,taper=taper,dt=h[1].d1)	
 	
 	return out,h
 end
 
-function SeisMute(m::ASCIIString,d::ASCIIString,param=Dict())
+function SeisMute(m::ASCIIString,d::ASCIIString,adj;tmute=0.,vmute=1500.,taper=0.1)
 
-	adj = get(param,"adj",true)
-	wd = get(param,"wd","wd")
-	ntrace = get(param,"ntrace",100000)
-	param["f"] = [SeisMute]
-	param["group"] = "some"
-	param["ntrace"] = ntrace
+	@compat parameters = Dict(:tmute=>tmute,:vmute=>vmute,:taper=>taper)
 	if (adj==true)
-		SeisProcess(d,m,param)
+		SeisProcess(d,m,[SeisMute],[parameters];group="some")
 	else
-		SeisProcess(m,d,param)
+		SeisProcess(m,d,[SeisMute],[parameters];group="some")
 	end
 
 end
 
-function SeisMute(m::Array{ASCIIString,1},d::Array{ASCIIString,1},param=Dict())
+function SeisMute(m::Array{ASCIIString,1},d::Array{ASCIIString,1},adj;tmute=0.,vmute=1500.,taper=0.1)
 
 	for j = 1 : length(m)
-		SeisMute(m[j],d[j],param)
+		SeisMute(m[j],d[j],adj;tmute=tmute,vmute=vmute,taper=taper)
 	end     
 
 end                                                                                                                     

@@ -29,7 +29,7 @@ function DotTest(m_rand::ASCIIString,d_rand::ASCIIString,operators,parameters)
 
 end
 
-function DotTest(m_rand::Array{ASCIIString,1},d_rand::Array{ASCIIString,1},op,param=Dict())
+function DotTest(m_rand::Array{ASCIIString,1},d_rand::Array{ASCIIString,1},operators,parameters)
 	# Dot product test for a vector of linear operators
 	# for 3 component data
 	
@@ -42,8 +42,8 @@ function DotTest(m_rand::Array{ASCIIString,1},d_rand::Array{ASCIIString,1},op,pa
 	d3_fwd = join(["tmp_DotTest_d3_adj_",rand_string])
 	m_adj = [m1_adj;m2_adj;m3_adj]
 	d_fwd = [d1_fwd;d2_fwd;d3_fwd]
-	Seismic.adjoint_op(m_adj,d_rand,op,param)
-	Seismic.forward_op(m_rand,d_fwd,op,param)
+	LinearOperator(m_adj,d_rand,operators,parameters,adj=true)
+	LinearOperator(m_rand,d_fwd,operators,parameters,adj=false)
 	inner1 = InnerProduct(d_rand,d_fwd)
 	inner2 = InnerProduct(m_rand,m_adj)
 	println("These values should be close to each other:")

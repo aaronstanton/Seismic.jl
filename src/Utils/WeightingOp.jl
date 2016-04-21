@@ -18,10 +18,10 @@ function WeightingOp(m::ASCIIString,d::ASCIIString,adj;w="NULL")
 
 end
 
-function ApplyDataWeights(m::Array{ASCIIString,1},d::Array{ASCIIString,1},adj;w="NULL")
+function WeightingOp(m::Array{ASCIIString,1},d::Array{ASCIIString,1},adj;w="NULL")
 
 	for j = 1 : length(m)
-		ApplyDataWeights(m[j],d[j],adj,w=w)
+		WeightingOp(m[j],d[j],adj,w=w)
 	end     
 
 end                                                                                                                     

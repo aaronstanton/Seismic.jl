@@ -24,7 +24,7 @@ end
 
 function InnerProduct(in1::Array{ASCIIString,1},in2::Array{ASCIIString,1};ntrace=10000)
 
-		ip = float32(0)
+		ip = 0.0
 		for j = 1 : length(in1)
 			ip += InnerProduct(in1[j],in2[j],ntrace=ntrace)
 		end

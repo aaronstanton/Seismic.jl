@@ -25,7 +25,7 @@ end
 
 function SeisRemove(filename::Array{ASCIIString,1})
 
-	for j = 1 : length(in)
+	for j = 1 : length(filename)
 		SeisRemove(filename[j])
 	end
 

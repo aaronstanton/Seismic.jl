@@ -54,37 +54,33 @@ function SeisProcess(in::Array{ASCIIString,1},out::Array{ASCIIString,1},operator
 end
 
 function SeisProcess(in1::ASCIIString,in2::ASCIIString,out::ASCIIString,operators,parameters;group="some",key=[],ntrace=10000)
-	f = get(param,"f",[fft_op])
-	group = get(param,"group","some")
-	key = get(param,"key",["imx","imy"])
-	ntrace = get(param,"ntrace",100)
 
 	if (group=="all")
-		d1,h1 = SeisRead(in1,group=group,key=key,itrace=1,ntrace=ntrace)
-		d2,h2 = SeisRead(in2,group=group,key=key,itrace=1,ntrace=ntrace)
+		d1,h1,e1 = SeisRead(in1,group=group,key=key,itrace=1,ntrace=ntrace)
+		d2,h2,e2 = SeisRead(in2,group=group,key=key,itrace=1,ntrace=ntrace)
 		for ifunc = 1 : length(f)
 			func = f[ifunc]
-			d3,h3 = func(d1,d2,h1,h2,param)
+			d3,h3 = func(d1,d2,h1,h2;parameters[j]...)
 			d1 = copy(d3)
 			h1 = copy(h3)
 		end
-		SeisWrite(out,d1,h1)
+		SeisWrite(out,d1,h1,e1)
 	else
 		itrace_in = 1
 		itrace_out = 1
 		nx = GetNumTraces(in1)
 		while itrace_in <= nx
-			d1,h1 = SeisRead(in1,group=group,key=key,itrace=itrace_in,ntrace=ntrace)
-			d2,h2 = SeisRead(in2,group=group,key=key,itrace=itrace_in,ntrace=ntrace)
+			d1,h1,e1 = SeisRead(in1,group=group,key=key,itrace=itrace_in,ntrace=ntrace)
+			d2,h2,e2 = SeisRead(in2,group=group,key=key,itrace=itrace_in,ntrace=ntrace)
 			num_traces_in = size(d1,2)
-			for ifunc = 1 : length(f)
-				func = f[ifunc]
-				d3,h3 = func(d1,d2,h1,h2,param)
+			for j = 1 : length(operators)
+				op = operators[j]
+				d3,h3 = op(d1,d2,h1,h2;parameters[j]...)
 				d1 = copy(d3)
 				h1 = copy(h3)
 			end
 			num_traces_out = size(d1,2)
-			SeisWrite(out,d1,h1,itrace=itrace_out)
+			SeisWrite(out,d1,h1,e1,itrace=itrace_out)
 			itrace_in += num_traces_in
 			itrace_out += num_traces_out
 		end

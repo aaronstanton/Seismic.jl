@@ -1,13 +1,19 @@
 function CGStep(m1,m2;a=1.,b=1.)
 	# m1 = a*m1 + b*m2
+	return a*m1 + b*m2
+end
+
+function CGStep(m1,m2,h1::Array{Header,1},h2::Array{Header,1};a=1.,b=1.)
+	# m1 = a*m1 + b*m2
 	return a*m1 + b*m2,h1
 end
 
 function CGStep(m1::ASCIIString,m2::ASCIIString;a=1.,b=1.)
 	# m1 = a*m1 + b*m2	
 
-	tmp = join(["tmp_CGStep_",string(int(rand()*100000))])
-	SeisProcess(m1,m2,tmp;group="some",f="[CGStep]",ntrace=100000)
+	tmp = join(["tmp_CGStep_",string(round(Int,rand()*100000))])
+	@compat params = Dict(:a=>a,:b=>b)
+	SeisProcess(m1,m2,tmp,[CGStep],[params];group="some",ntrace=100000)
 	SeisCopy(tmp,m1)
 	SeisRemove(tmp)
 end

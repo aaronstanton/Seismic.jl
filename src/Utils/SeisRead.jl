@@ -47,7 +47,8 @@ function SeisRead(filename;group="all",key=["imx","imy"],itrace=1,ntrace=10000)
 		if (group == "all")
 			ntrace = nx
 		elseif (group == "gather")
-			for j=itrace:itrace+nx-1
+			j = 1
+			for j=itrace:nx
 				h1 = GrabHeader(stream_h,j)
 				for ikey=1:length(key)
 					curr[ikey] = getfield(h1,symbol(key[ikey]))
@@ -58,7 +59,7 @@ function SeisRead(filename;group="all",key=["imx","imy"],itrace=1,ntrace=10000)
 				end
 				prev = 1*curr
 			end
-			ntrace = nx > ntrace ? ntrace : nx
+			ntrace = j < nx ? j - itrace : j - itrace + 1
 		else
 			ntrace = nx > ntrace ? ntrace : nx
 		end
@@ -84,11 +85,11 @@ function SeisRead(filename;group="all",key=["imx","imy"],itrace=1,ntrace=10000)
 		elseif extent.n5 == 1 && extent.n4 == 1 && extent.n3 == 1
 			d = reshape(d,convert(Int,extent.n1),convert(Int,extent.n2))
 		elseif extent.n5 == 1 && extent.n4 == 1
-			d = reshape(d,convert(Int,extent.n1),convert(Int,extent.n2),convert(Int,extent.n3))
+			d = reshape(d,convert(Int,extent.n1),convert(Int,extent.n3),convert(Int,extent.n2))
 		elseif extent.n5 == 1
-			d = reshape(d,convert(Int,extent.n1),convert(Int,extent.n2),convert(Int,extent.n3),convert(Int,extent.n4))
+			d = reshape(d,convert(Int,extent.n1),convert(Int,extent.n4),convert(Int,extent.n3),convert(Int,extent.n2))
 		else
-			d = reshape(d,convert(Int,extent.n1),convert(Int,extent.n2),convert(Int,extent.n3),convert(Int,extent.n4),convert(Int,extent.n5))
+			d = reshape(d,convert(Int,extent.n1),convert(Int,extent.n5),convert(Int,extent.n4),convert(Int,extent.n3),convert(Int,extent.n2))
 		end
 	else
 		d = reshape(d,convert(Int64,extent.n1),convert(Int64,ntrace))

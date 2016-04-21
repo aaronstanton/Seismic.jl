@@ -1,5 +1,6 @@
 export  SeisPOCS,
 SeisAGC,
+SeisDiff,
 SeisGSC,
 SeisGain,
 SeisMWNI,
@@ -22,6 +23,7 @@ SeisRadonInverse,
 SeisMute
 include("SeisPOCS.jl")
 include("SeisAGC.jl")
+include("SeisDiff.jl")
 include("SeisGSC.jl")
 include("SeisGain.jl")
 include("SeisMWNI.jl")

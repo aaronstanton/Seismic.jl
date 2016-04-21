@@ -12,7 +12,7 @@ void wem(float **d, float **m, float **wav,
 /*< wave equation depth migration operator. >*/
 {
 	int iz,ix,imx,imy,igx,igy,ik,iw,it,nw,nkx,nky,ntfft;
-	float dw,dkx,dky,w;
+	float dw,dkx,dky;
 	int ifmin,ifmax;
 	float *d_t;
 	complex *d_w,**d_g_wx,**d_s_wx;
@@ -79,9 +79,12 @@ void wem(float **d, float **m, float **wav,
 	nw = (int) ntfft/2 + 1;
 	nkx = nmx > 1 ? padx*nmx : 1;
 	nky = nmy > 1 ? padx*nmy : 1;
-	dkx = 2*PI/((float) nkx)/dmx;
-	dky = 2*PI/((float) nky)/dmy;
-	dw = 2*PI/((float) ntfft)/dt;
+	dkx = 2.0*PI/((float) nkx)/dmx;
+	dky = 2.0*PI/((float) nky)/dmy;
+	dw = 2.0*PI/((float) ntfft)/dt;
+	
+fprintf(stderr,"dw=%f\n",dw);	
+	
 	if(fmax*dt*ntfft+1<nw) ifmax = (int) fmax*dt*ntfft + 1;
 	else ifmax = nw;
 	if(fmin*dt*ntfft+1<ifmax) ifmin = (int) fmin*dt*ntfft;
@@ -122,8 +125,7 @@ void wem(float **d, float **m, float **wav,
 			f_op(d_w,d_t,nw,nt,1); /* d_t to d_w */
 			for (iw=0;iw<ifmin;iw++) d_g_wx[ix][iw] = 0.;
 			for (iw=ifmin;iw<ifmax;iw++){ 
-				w = iw*dw;
-				d_g_wx[ix][iw] = w*w*d_w[iw];
+				d_g_wx[ix][iw] = d_w[iw];
 			}
 			for (iw=ifmax;iw<nw;iw++) d_g_wx[ix][iw] = 0.;
 		}
@@ -174,8 +176,7 @@ void wem(float **d, float **m, float **wav,
 		for (ix=0;ix<nmx*nmy;ix++){
 			for (iw=0;iw<ifmin;iw++) d_w[iw] = 0.;
 			for (iw=ifmin;iw<ifmax;iw++){ 
-				w = iw*dw;
-				d_w[iw] = w*w*d_g_wx[ix][iw];
+				d_w[iw] = d_g_wx[ix][iw];
 			}
 			for (iw=ifmax;iw<nw;iw++) d_w[iw] = 0.;
 			f_op(d_w,d_t,nw,nt,0); /* d_w to d_t */
@@ -225,13 +226,13 @@ void extrap1f(float **m,complex **d_g_wx, complex **d_s_wx,
 	if (adj){
 		for (ix=0;ix<nmx*nmy;ix++){ 
 			d_xs[ix] = d_s_wx[ix][iw]/sqrtf((float) ntfft);
-			d_xg[ix] = powf(w,2)*d_g_wx[ix][iw]/sqrtf((float) ntfft);
+			d_xg[ix] = d_g_wx[ix][iw]/sqrtf((float) ntfft); //powf(w,2)*
 		}
 		for (iz=0;iz<nz;iz++){ // extrapolate source and receiver wavefields
 			z = oz + dz*iz;
 			if (z >= sz){
-				if (pspi) pspiop(d_xs,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,-dz,iz,v,po,pd,vref,iref1,iref2,nref,p1,p2,true,true,verbose);
-				else ssop(d_xs,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,-dz,iz,v,po,pd,p1,p2,true,true,verbose);
+				if (pspi) pspiop(d_xs,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,vref,iref1,iref2,nref,p1,p2,true,true,verbose);
+				else ssop(d_xs,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,p1,p2,true,true,verbose);
 			} 
 			if (z >= gz){
 				if (pspi) pspiop(d_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,vref,iref1,iref2,nref,p1,p2,true,false,verbose);
@@ -251,8 +252,8 @@ void extrap1f(float **m,complex **d_g_wx, complex **d_s_wx,
 		for (iz=0;iz<nz;iz++){ // extrapolate source wavefield 
 			z = oz + dz*iz;
 			if (z >= sz){
-				if (pspi) pspiop(d_xs,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,-dz,iz,v,po,pd,vref,iref1,iref2,nref,p1,p2,true,true,verbose);
-				else ssop(d_xs,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,-dz,iz,v,po,pd,p1,p2,true,true,verbose);
+				if (pspi) pspiop(d_xs,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,vref,iref1,iref2,nref,p1,p2,true,true,verbose);
+				else ssop(d_xs,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,p1,p2,true,true,verbose);
 				for (ix=0;ix<nmx*nmy;ix++) smig[ix][iz] = d_xs[ix];
 			}
 			else{
@@ -266,12 +267,12 @@ void extrap1f(float **m,complex **d_g_wx, complex **d_s_wx,
 				for (ix=0;ix<nmx*nmy;ix++){ 
 					d_xg[ix] += m[ix][iz]*smig[ix][iz];
 				}
-				if (pspi) pspiop(d_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,-dz,iz,v,po,pd,vref,iref1,iref2,nref,p1,p2,false,false,verbose);
-				else ssop(d_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,-dz,iz,v,po,pd,p1,p2,false,false,verbose);
+				if (pspi) pspiop(d_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,vref,iref1,iref2,nref,p1,p2,false,false,verbose);
+				else ssop(d_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,p1,p2,false,false,verbose);
 			}
 		}
 		for (ix=0;ix<nmx*nmy;ix++){
-			d_g_wx[ix][iw] = powf(w,2)*d_xg[ix]/sqrtf((float) ntfft);
+			d_g_wx[ix][iw] = d_xg[ix]/sqrtf((float) ntfft);// powf(w,2)*
 		}
 		free2complex(smig);
 	}
@@ -290,13 +291,14 @@ void ssop(complex *d_x,
 		bool src,
 		bool verbose)
 {
-	float kx,ky,s;
+	float kx,ky;
 	complex L;
 	int ik,ikx,iky,imx,imy; 
 	complex *d_k;
 	fftwf_complex *a,*b;
+	complex w2,s;	
+
 	int lmx,lmy;
-	float w2;
 	if (nmx>100) lmx=30;
 	else lmx=0;
 	if (nmy>100) lmy=30;
@@ -304,7 +306,10 @@ void ssop(complex *d_x,
 	a  = fftwf_malloc(sizeof(fftwf_complex) * nkx*nky);
 	b  = fftwf_malloc(sizeof(fftwf_complex) * nkx*nky);
 	d_k = alloc1complex(nkx*nky);
-	w2 = (w*w)*(po[iz]*po[iz]);
+	w2 = 0.5f + w*I;
+	w2 *= w2;
+	w2 *= po[iz];
+	w2 *= po[iz];
 	if (adj){
 		for(imx=0; imx<nkx;imx++){ 
 			for(imy=0; imy<nky;imy++){ 
@@ -312,6 +317,31 @@ void ssop(complex *d_x,
 				else a[imx*nky + imy] = 0.;
 			}
 		}
+		fftwf_execute_dft(p1,a,a); 
+		for (ikx=0;ikx<nkx;ikx++){
+			if (ikx<= (int) nkx/2) kx = (float) dkx*ikx;
+			else                   kx = -((float) dkx*nkx - dkx*ikx);
+			for (iky=0;iky<nky;iky++){
+				if (iky<= (int) nky/2) ky = (float) dky*iky;
+				else                   ky = -((float) dky*nky - dky*iky);
+				s = w2 + powf(kx,2) + powf(ky,2);
+				L = cexp(-csqrtf(s)*dz);
+				if (src) d_k[ikx*nky + iky] = ((complex) a[ikx*nky + iky])*L/sqrtf((float) nkx*nky);
+				else     d_k[ikx*nky + iky] = ((complex) a[ikx*nky + iky])*conjf(L)/sqrtf((float) nkx*nky);   
+			}
+		}
+		for(ik=0; ik<nkx*nky;ik++) b[ik] = (fftwf_complex) d_k[ik];
+		fftwf_execute_dft(p2,b,b);
+		for(imx=0; imx<nkx;imx++){ 
+			for(imy=0; imy<nky;imy++){ 
+				if (imx < nmx && imy < nmy){
+					L = cexpf(I*w*pd[imx*nmy + imy][iz]*dz);
+					if (src) d_x[imx*nmy + imy] = ((complex) b[imx*nky + imy])*conjf(L)/sqrtf((float) nkx*nky); // SS operator
+					else     d_x[imx*nmy + imy] = ((complex) b[imx*nky + imy])*L/sqrtf((float) nkx*nky); // SS operator
+				}
+			}
+		}
+		boundary_condition(d_x,nmx,lmx,nmy,lmy);    
 	}
 	else{
 		boundary_condition(d_x,nmx,lmx,nmy,lmy);    
@@ -319,39 +349,25 @@ void ssop(complex *d_x,
 			for(imy=0; imy<nky;imy++){ 
 				if (imx < nmx && imy < nmy){
 					L = cexpf(I*w*pd[imx*nmy + imy][iz]*dz);  
-					a[imx*nky + imy] = d_x[imx*nmy + imy]*L; // SS operator
+					a[imx*nky + imy] = d_x[imx*nmy + imy]*conjf(L); // SS operator
 				}
-				else a[imx*nky + imy] = 0.;
+				else a[imx*nky + imy] = 0.0;
 			}
 		}
-	}
-	fftwf_execute_dft(p1,a,a); 
-	for (ikx=0;ikx<nkx;ikx++){
-		if (ikx<= (int) nkx/2) kx = (float) dkx*ikx;
-		else                           kx = -((float) dkx*nkx - dkx*ikx);
-		for (iky=0;iky<nky;iky++){
-			if (iky<= (int) nky/2) ky = (float) dky*iky;
-			else                           ky = -((float) dky*nky - dky*iky);
-			s = w2 - powf(kx,2) - powf(ky,2);
-			if (s>=0.0001) L = cexp(I*sqrtf(s)*dz); 
-			else L = 0.95;
-			d_k[ikx*nky + iky] = ((complex) a[ikx*nky + iky])*L/sqrtf((float) nkx*nky);        
-		}
-	}
-	for(ik=0; ik<nkx*nky;ik++) b[ik] = (fftwf_complex) d_k[ik];
-	fftwf_execute_dft(p2,b,b);
-	if (adj){
-		for(imx=0; imx<nkx;imx++){ 
-			for(imy=0; imy<nky;imy++){ 
-				if (imx < nmx && imy < nmy){
-					L = cexpf(I*w*pd[imx*nmy + imy][iz]*dz);
-					d_x[imx*nmy + imy] = ((complex) b[imx*nky + imy])*L/sqrtf((float) nkx*nky); // SS operator
-				}
+		fftwf_execute_dft(p1,a,a); 
+		for (ikx=0;ikx<nkx;ikx++){
+			if (ikx<= (int) nkx/2) kx = (float) dkx*ikx;
+			else                   kx = -((float) dkx*nkx - dkx*ikx);
+			for (iky=0;iky<nky;iky++){
+				if (iky<= (int) nky/2) ky = (float) dky*iky;
+				else                   ky = -((float) dky*nky - dky*iky);
+				s = w2 + powf(kx,2) + powf(ky,2);
+				L = cexp(-csqrtf(s)*dz);
+				d_k[ikx*nky + iky] = ((complex) a[ikx*nky + iky])*L/sqrtf((float) nkx*nky);
 			}
 		}
-		boundary_condition(d_x,nmx,lmx,nmy,lmy);    
-	}
-	else{
+		for(ik=0; ik<nkx*nky;ik++) b[ik] = (fftwf_complex) d_k[ik];
+		fftwf_execute_dft(p2,b,b);
 		for(imx=0; imx<nkx;imx++){ 
 			for(imy=0; imy<nky;imy++){ 
 				if (imx < nmx && imy < nmy){ 
@@ -380,15 +396,16 @@ void pspiop(complex *d_x,
 {
 
 
-	float kx,ky,s;
+	float kx,ky;
 	complex L;
 	int ik,ikx,iky,imx,imy,ix; 
 	complex *d_k;
 	fftwf_complex *a,*b;
 	int lmx,lmy;
 	complex **dref;
+	complex w2,s;	
 	int iref;
-	float v,vref1,vref2,aa,pd_ref,w2;
+	float v,vref1,vref2,aa,pd_ref;
 	if (nmx>100) lmx=30;
 	else lmx=0;
 	if (nmy>100) lmy=30;
@@ -407,17 +424,20 @@ void pspiop(complex *d_x,
 		}
 		fftwf_execute_dft(p1,a,a);
 		for (iref=0;iref<nref;iref++){
-			w2 = (w/vref[iref][iz])*(w/vref[iref][iz]);
+			w2 = 0.5f + w*I;
+			w2 *= w2;
+			w2 /= vref[iref][iz];
+			w2 /= vref[iref][iz];
 			for (ikx=0;ikx<nkx;ikx++){
 				if (ikx<= (int) nkx/2) kx = (float) dkx*ikx;
 				else                   kx = -((float) dkx*nkx - dkx*ikx);
 				for (iky=0;iky<nky;iky++){
 					if (iky<= (int) nky/2) ky = (float) dky*iky;
 					else                   ky = -((float) dky*nky - dky*iky);
-					s = w2 - powf(kx,2) - powf(ky,2);
-					if (s>=0.0001) L = cexp(I*sqrtf(s)*dz); 
-					else L = 0.95;
-					d_k[ikx*nky + iky] = ((complex) a[ikx*nky + iky])*L/sqrtf((float) nkx*nky);
+					s = w2 + powf(kx,2) + powf(ky,2);
+					L = cexp(-csqrtf(s)*dz);
+					if (src) d_k[ikx*nky + iky] = ((complex) a[ikx*nky + iky])*L/sqrtf((float) nkx*nky);
+					else     d_k[ikx*nky + iky] = ((complex) a[ikx*nky + iky])*conjf(L)/sqrtf((float) nkx*nky);
 				}
 			}
 			for(ik=0; ik<nkx*nky;ik++) b[ik] = (fftwf_complex) d_k[ik];
@@ -427,7 +447,8 @@ void pspiop(complex *d_x,
 					if (imx < nmx && imy < nmy){
 						pd_ref = (1.0/vel[imx*nmy + imy][iz]) - (1.0/vref[iref][iz]);
 						L = cexpf(I*w*pd_ref*dz);
-						dref[imx*nmy + imy][iref] = ((complex) b[imx*nky + imy])*L/sqrtf((float) nkx*nky);
+						if (src) dref[imx*nmy + imy][iref] = ((complex) b[imx*nky + imy])*conjf(L)/sqrtf((float) nkx*nky);
+						else     dref[imx*nmy + imy][iref] = ((complex) b[imx*nky + imy])*L/sqrtf((float) nkx*nky);
 					}
 				}
 			}
@@ -454,12 +475,17 @@ void pspiop(complex *d_x,
 		}
 		for (ix=0;ix<nmx*nmy;ix++) d_x[ix] = 0.;
 		for (iref=0;iref<nref;iref++){
-			w2 = (w/vref[iref][iz])*(w/vref[iref][iz]);
+			w2 = 0.5f + w*I;
+			w2 *= w2;
+			w2 /= vref[iref][iz];
+			w2 /= vref[iref][iz];
 			for(imx=0; imx<nkx;imx++){
-				for(imy=0; imy<nky;imy++){ 
-					pd_ref = (1.0/vel[imx*nmy + imy][iz]) - (1.0/vref[iref][iz]);
-					L = cexpf(I*w*pd_ref*dz);  
-					if (imx < nmx && imy < nmy) a[imx*nky + imy] = dref[imx*nmy + imy][iref]*L;
+				for(imy=0; imy<nky;imy++){
+					if (imx < nmx && imy < nmy){ 
+						pd_ref = (1.0/vel[imx*nmy + imy][iz]) - (1.0/vref[iref][iz]);
+						L = cexpf(I*w*pd_ref*dz);  
+						a[imx*nky + imy] = dref[imx*nmy + imy][iref]*conjf(L);
+					}
 					else a[imx*nky + imy] = 0.;
 				}
 			}
@@ -470,9 +496,8 @@ void pspiop(complex *d_x,
 				for (iky=0;iky<nky;iky++){
 					if (iky<= (int) nky/2) ky = (float) dky*iky;
 					else                   ky = -((float) dky*nky - dky*iky);
-					s = w2 - powf(kx,2) - powf(ky,2);
-					if (s>=0.0001) L = cexp(I*sqrtf(s)*dz); 
-					else L = 0.95;
+					s = w2 + powf(kx,2) + powf(ky,2);
+					L = cexp(-csqrtf(s)*dz);
 					d_k[ikx*nky + iky] = ((complex) a[ikx*nky + iky])*L/sqrtf((float) nkx*nky);
 				}
 			}
@@ -742,7 +767,7 @@ void extrapolate_source(complex **d_s_wx, float **angx, float **angy, float **an
 	for (iz=0;iz<nz;iz++){ // extrapolate source wavefield 
 		z = oz + dz*iz;
 		if (z >= sz){
-			ssop_source(d_xs,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,-dz,iz,v_p,po_p,pd_p,p1,p2,verbose);
+			ssop_source(d_xs,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v_p,po_p,pd_p,p1,p2,verbose);
 			for (imx=0;imx<nmx;imx++) for (imy=0;imy<nmy;imy++) u_s[imx*nmy*nz + imy*nz + iz] = d_xs[imx*nmy + imy];
 		}
 	}
@@ -792,46 +817,46 @@ void ssop_source(complex *d_x,
 		bool verbose)
 {
 
-	float kx,ky,s;
+	float kx,ky;
 	complex L;
 	int ik,ikx,iky,imx,imy; 
 	complex *d_k;
 	fftwf_complex *a,*b;
 	int lmx,lmy;
+	complex w2,s;	
 
+	
 	if (nmx>100) lmx=30;
 	else lmx=0;
 	if (nmy>100) lmy=30;
 	else lmy=0;
-
 	a  = fftwf_malloc(sizeof(fftwf_complex) * nkx*nky);
 	b  = fftwf_malloc(sizeof(fftwf_complex) * nkx*nky);
 	d_k = alloc1complex(nkx*nky);
-
-
 	boundary_condition(d_x,nmx,lmx,nmy,lmy);    
 	for(imx=0; imx<nkx;imx++){ 
 		for(imy=0; imy<nky;imy++){ 
 			if (imx < nmx && imy < nmy){
 				L = cexpf(I*w*pd[imx*nmy + imy][iz]*dz);  
-				a[imx*nky + imy] = d_x[imx*nmy + imy]*L; // SS operator
+				a[imx*nky + imy] = d_x[imx*nmy + imy]*conjf(L); // SS operator
 			}
 			else a[imx*nky + imy] = 0.;
 		}
 	}
-
-
 	fftwf_execute_dft(p1,a,a); 
+	w2 = 0.5f + w*I;
+	w2 *= w2;
+	w2 *= po[iz];
+	w2 *= po[iz];
 	for (ikx=0;ikx<nkx;ikx++){
 		if (ikx<= (int) nkx/2) kx = (float) dkx*ikx;
 		else                           kx = -((float) dkx*nkx - dkx*ikx);
 		for (iky=0;iky<nky;iky++){
 			if (iky<= (int) nky/2) ky = (float) dky*iky;
 			else                           ky = -((float) dky*nky - dky*iky);
-			s = (w*w)*(po[iz]*po[iz]) - (kx*kx) - (ky*ky);
-			if (s>=0) L = cexpf(I*sqrtf(s)*dz); 
-			else L = cexpf(-0.2*sqrtf(fabs(s))*fabs(dz));
-			d_k[ikx*nky + iky] = ((complex) a[ikx*nky + iky])*L/sqrtf((float) nkx*nky);        
+			s = w2 + powf(kx,2) + powf(ky,2);
+			L = cexp(-csqrtf(s)*dz);
+			d_k[ikx*nky + iky] = ((complex) a[ikx*nky + iky])*L/sqrtf((float) nkx*nky);
 		}
 	}
 	for(ik=0; ik<nkx*nky;ik++) b[ik] = (fftwf_complex) d_k[ik];
@@ -844,7 +869,6 @@ void ssop_source(complex *d_x,
 			}
 		}
 	}
-
 	free1complex(d_k);
 	fftwf_free(a);
 	fftwf_free(b);
