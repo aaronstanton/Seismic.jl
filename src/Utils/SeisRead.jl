@@ -61,7 +61,7 @@ function SeisRead(filename;group="all",key=["imx","imy"],itrace=1,ntrace=10000)
 			end
 			ntrace = j < nx ? j - itrace : j - itrace + 1
 		else
-			ntrace = nx > ntrace ? ntrace : nx
+			ntrace = nx - itrace + 1 > ntrace ? ntrace : nx - itrace + 1
 		end
 		position_h = 4*nhead*(itrace-1)
 		seek(stream_h,position_h)

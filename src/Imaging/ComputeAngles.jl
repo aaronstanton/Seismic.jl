@@ -53,10 +53,10 @@ function ComputeAngles(angx::ASCIIString,angy::ASCIIString;vel="vel",dip_flag=fa
 	nt = h[1].n1
 	dt = h[1].d1
 	ot = h[1].o1
-	nsx = length(sx)
+	nsx = length(unique(sx))
 	osx = sx[1]	
 	dsx = nsx > 1 ? sx[2] - sx[1] : 1.	
-	nsy = length(sy)	
+	nsy = length(unique(sy))	
 	osy = sy[1]	
 	dsy = nsy > 1 ? sy[2] - sy[1] : 1.
 	dsx = dsx == 0. ? 1. : dsx	
