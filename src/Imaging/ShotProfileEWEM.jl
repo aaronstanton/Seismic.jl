@@ -116,7 +116,7 @@
 													extent = Seismic.Extent(nz,nangy,nangx,ny,nx,
 													oz,oangy,oangx,oy,ox,
 													dz,dangy,dangx,dy,dx,
-													"Depth","angx","angy","my","mx",
+													"Depth","angy","angx","my","mx",
 													"m","degrees","degrees","m","m",
 													"")
 													for imx = 1 : nx
@@ -366,10 +366,10 @@
 															end
 														end
 
-														extent = Seismic.Extent(nz,nx,ny,1,1,
-														oz,ox,oy,0.,0.,
-														dz,dx,dy,1.,1.,
-														"Depth","mx","my","","",
+														extent = Seismic.Extent(nz,ny,nx,1,1,
+														oz,oy,ox,0.,0.,
+														dz,dy,dx,1.,1.,
+														"Depth","my","mx","","",
 														"m","m","m","","",
 														"")
 														SeisWrite(shot_list[ishot].mpp,mpp_shot,h_shot,extent)
@@ -385,10 +385,10 @@
 													@sync @parallel for ishot = 1 : nshot
 														a = shotewem(shot_list[ishot])
 													end
-													extent = Seismic.Extent(nt,nx,ny,nsx,nsy,
-													ot,ox,oy,osx,osy,
-													dt,dx,dy,dsx,dsy,
-													"Time","gx","gy","sx","sy",
+													extent = Seismic.Extent(nt,nsy,nsx,ny,nx,
+													ot,osy,osx,oy,ox,
+													dt,dsy,dsx,dy,dx,
+													"Time","sy","sx","gy","gx",
 													"s","m","m","m","m",
 													"")
 													j = 1
