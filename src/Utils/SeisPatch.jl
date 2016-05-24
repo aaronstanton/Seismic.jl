@@ -126,29 +126,26 @@ function SeisPatch(in::ASCIIString,out::ASCIIString;style="sxsygxgy",min_isx=0,m
 	nx3 = max_ix3 - min_ix3 + 1
 	nx4 = max_ix4 - min_ix4 + 1
 
-	stream = open(join([in ".seish"]))
-	seek(stream, header_count["n1"])
-	nt = read(stream,Int32)
-	seek(stream, header_count["d1"])
-	dt = read(stream,Float32)
-	seek(stream, header_count["o1"])
-	ot = read(stream,Float32)
+	filename_data = ParseDataName(in)
+	filename_headers = ParseHeaderName(in)
+	extent = ReadTextHeader(in)
 
-	close(stream)
+	nt = extent.n1
+	dt = extent.d1
+	ot = extent.o1
+
 	it_WL  = it_WL  > nt  ? nt  : it_WL
 	ix1_WL = ix1_WL > nx1 ? nx1 : ix1_WL
 	ix2_WL = ix2_WL > nx2 ? nx2 : ix2_WL
 	ix3_WL = ix3_WL > nx3 ? nx3 : ix3_WL
 	ix4_WL = ix4_WL > nx4 ? nx4 : ix4_WL
 
-
 	tmax = ot + dt*nt
-	it_NW = int(floor(nt/(it_WL-it_WO)))
-	ix1_NW = int(floor(nx1/(ix1_WL-ix1_WO)))
-	ix2_NW = int(floor(nx2/(ix2_WL-ix2_WO)))
-	ix3_NW = int(floor(nx3/(ix3_WL-ix3_WO)))
-	ix4_NW = int(floor(nx4/(ix4_WL-ix4_WO)))
-
+	it_NW = Int(floor(nt/(it_WL-it_WO)))
+	ix1_NW = Int(floor(nx1/(ix1_WL-ix1_WO)))
+	ix2_NW = Int(floor(nx2/(ix2_WL-ix2_WO)))
+	ix3_NW = Int(floor(nx3/(ix3_WL-ix3_WO)))
+	ix4_NW = Int(floor(nx4/(ix4_WL-ix4_WO)))
 
 	if (ot + dt*(it_NW-1)*(it_WL-it_WO) + dt*it_WL < tmax)
 		it_NW += 1

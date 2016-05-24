@@ -23,6 +23,7 @@ int main (int argc, char *argv[])
 	int padt,padx;
 	bool adj,pspi,verbose;
 	struct SeisFileHeader fh;
+	float kz_eps;
 	
 	if (!par_read_bool(argc,argv,"adj",&adj)) adj = true;
 	if (!par_read_bool(argc,argv,"pspi",&pspi)) pspi = true;
@@ -40,6 +41,7 @@ int main (int argc, char *argv[])
 	if (!par_read_int(argc,argv,"padt",&padt)) padt = 1;
 	if (!par_read_int(argc,argv,"padx",&padx)) padx = 1;
 	if (!par_read_int(argc,argv,"nref",&nref)) nref = 5;
+	if (!par_read_float(argc,argv,"kz_eps",&kz_eps)) kz_eps = 0.0005;
 	// get dimensions from velocity (nz,oz,dz,nx,ox,dx) and wavelet (nt,sx) files
 	InitFileHeader(&fh);
 	ReadFileHeader(wav_name,&fh);
@@ -109,7 +111,8 @@ int main (int argc, char *argv[])
 	    fmin,fmax,
 	    padt,padx,
 	    adj,pspi,
-	    verbose);
+	    verbose,
+	    kz_eps);
 	if (adj){
 		for (ix=0;ix<nx*ny;ix++) h_m[ix].mx = h_d[ix].gx;
 		for (ix=0;ix<nx*ny;ix++) h_m[ix].my = h_d[ix].gy;

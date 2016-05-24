@@ -1,26 +1,22 @@
-function SeisFXDecon(in,param=Dict())
+function SeisFXDecon(in;dt=0.002,fmax=Int(floor(0.5/dt)),mu=0.01,filter_length=10,)
 
-	dt = get(param,"dt",0.002)
-	filter_length = get(param,"filter_length",10)
-	mu = get(param,"mu",0.01)
 	nt = size(in,1)
 	nx = size(in,2)
 	nf = nt
 	dw = 2.*pi/nf/dt
-	nw = int(nf/2) + 1
-	fmax = get(param,"fmax",int(floor(0.5/dt)))
+	nw = Int(floor(nf/2)) + 1
 	if(fmax*dt*nf < nw) 
-		iw_max = int(floor(fmax*dt*nf))
+		iw_max = Int(floor(fmax*dt*nf))
 	else 
-		iw_max = int(floor(0.5/dt))
+		iw_max = Int(floor(0.5/dt))
 	end
 	D = fft(in,1)
 	Df = zeros(Complex64,size(D))
 	Db = zeros(Complex64,size(D))
 	for iw=1:iw_max
 		y = vec(D[iw,:])
-		yf = fxdecon(y,"f",filter_length,mu);
-		yb = fxdecon(y,"b",filter_length,mu);
+		yf = fxdecon(y,"f",filter_length,mu)
+		yb = fxdecon(y,"b",filter_length,mu)
 		Df[iw,:] = yf
 		Db[iw,:] = yb
 	end
@@ -45,7 +41,7 @@ function fxdecon(d,direction,filter_length,mu)
 	else
 		y  = d[filter_length+1:nx,1];
 		C  = d[filter_length:nx-1];
-		R = flipud(d[1:filter_length]);
+		R = flipdim(d[1:filter_length],1);
 		M = toeplitz(C,R);
 	end	
 	B = M'*M;  
@@ -53,9 +49,9 @@ function fxdecon(d,direction,filter_length,mu)
 	ab = (B + beta*eye(filter_length))\M'*y
 	temp = M*ab
 	if (direction=="b")
-		d = [temp ; zeros(filter_length)]
+		d = vcat(temp , zeros(eltype(temp),filter_length))
 	else
-		d = [zeros(filter_length) ; temp]
+		d = vcat(zeros(eltype(temp),filter_length) , temp)
 	end	
 
 	return d
@@ -66,9 +62,9 @@ function hankel(c, r)
 	nc = length(r)
 	nr = length(c)
 	if (nc > 1)
-		c = [ c ; r[2:nc] ]
+		c = vcat( c , r[2:nc] )
 	end
-	m = c[ones(nr) * [1:nc]' + [0:nr-1]*ones(nc)']
+	m = c[ones(Int,nr) * collect(1:nc)' + collect(0:nr-1)*ones(Int,nc)']
 	m = reshape(m,nr,nc)
 
 	return m

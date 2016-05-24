@@ -20,9 +20,14 @@ end
 
 function WeightingOp(m::Array{ASCIIString,1},d::Array{ASCIIString,1},adj;w="NULL")
 
-	for j = 1 : length(m)
-		WeightingOp(m[j],d[j],adj,w=w)
-	end     
-
+	if !(isdefined(w,2))
+		for j = 1 : length(m)
+			WeightingOp(m[j],d[j],adj,w=w)
+		end     
+	else
+		for j = 1 : length(m)
+			WeightingOp(m[j],d[j],adj,w=w[j])
+		end     
+	end
 end                                                                                                                     
 

@@ -8,7 +8,8 @@ void wem(float **d, float **m, float **wav,
 		int nz, float oz, float dz, float gz, float sz,
 		float **vel, int nref, float fmin, float fmax,
 		int padt, int padx,
-		bool adj, bool pspi, bool verbose)
+		bool adj, bool pspi, bool verbose,
+		float kz_eps)
 /*< wave equation depth migration operator. >*/
 {
 	int iz,ix,imx,imy,igx,igy,ik,iw,it,nw,nkx,nky,ntfft;
@@ -165,7 +166,7 @@ fprintf(stderr,"dw=%f\n",dw);
 	for (iw=ifmin;iw<ifmax;iw++){ 
 		progress += 1./((float) ifmax - ifmin);
 		if (verbose) progress_msg(progress);
-		extrap1f(m_threads,d_g_wx,d_s_wx,iw,ifmax,nw,ifmax,ntfft,dw,dkx,dky,nkx,nky,nz,oz,dz,gz,sz,nmx,omx,dmx,nmy,omy,dmy,nthread,vel,po,pd,vref,iref1,iref2,nref,p1,p2,adj,pspi,verbose);
+		extrap1f(m_threads,d_g_wx,d_s_wx,iw,ifmax,nw,ifmax,ntfft,dw,dkx,dky,nkx,nky,nz,oz,dz,gz,sz,nmx,omx,dmx,nmy,omy,dmy,nthread,vel,po,pd,vref,iref1,iref2,nref,p1,p2,adj,pspi,verbose,kz_eps);
 	}
 	if (verbose) fprintf(stderr,"\n");
 	if (adj){
@@ -209,7 +210,8 @@ void extrap1f(float **m,complex **d_g_wx, complex **d_s_wx,
 		float **v,float *po,float **pd,
 		float **vref, int **iref1, int **iref2, int nref,
 		fftwf_plan p1,fftwf_plan p2,
-		bool adj, bool pspi, bool verbose)   
+		bool adj, bool pspi, bool verbose,
+		float kz_eps)   
 /*< extrapolate 1 frequency >*/
 {
 	float w,factor,z;
@@ -231,12 +233,12 @@ void extrap1f(float **m,complex **d_g_wx, complex **d_s_wx,
 		for (iz=0;iz<nz;iz++){ // extrapolate source and receiver wavefields
 			z = oz + dz*iz;
 			if (z >= sz){
-				if (pspi) pspiop(d_xs,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,vref,iref1,iref2,nref,p1,p2,true,true,verbose);
-				else ssop(d_xs,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,p1,p2,true,true,verbose);
+				if (pspi) pspiop(d_xs,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,vref,iref1,iref2,nref,p1,p2,true,true,verbose,kz_eps);
+				else ssop(d_xs,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,p1,p2,true,true,verbose,kz_eps);
 			} 
 			if (z >= gz){
-				if (pspi) pspiop(d_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,vref,iref1,iref2,nref,p1,p2,true,false,verbose);
-				else ssop(d_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,p1,p2,true,false,verbose);
+				if (pspi) pspiop(d_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,vref,iref1,iref2,nref,p1,p2,true,false,verbose,kz_eps);
+				else ssop(d_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,p1,p2,true,false,verbose,kz_eps);
 				for (imx=0;imx<nmx;imx++){ 
 					for (imy=0;imy<nmy;imy++){
 						m[imx*nmy*nthread + imy*nthread + ithread][iz] += factor*crealf(d_xg[imx*nmy + imy]*conjf(d_xs[imx*nmy + imy]));
@@ -252,8 +254,8 @@ void extrap1f(float **m,complex **d_g_wx, complex **d_s_wx,
 		for (iz=0;iz<nz;iz++){ // extrapolate source wavefield 
 			z = oz + dz*iz;
 			if (z >= sz){
-				if (pspi) pspiop(d_xs,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,vref,iref1,iref2,nref,p1,p2,true,true,verbose);
-				else ssop(d_xs,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,p1,p2,true,true,verbose);
+				if (pspi) pspiop(d_xs,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,vref,iref1,iref2,nref,p1,p2,true,true,verbose,kz_eps);
+				else ssop(d_xs,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,p1,p2,true,true,verbose,kz_eps);
 				for (ix=0;ix<nmx*nmy;ix++) smig[ix][iz] = d_xs[ix];
 			}
 			else{
@@ -267,8 +269,8 @@ void extrap1f(float **m,complex **d_g_wx, complex **d_s_wx,
 				for (ix=0;ix<nmx*nmy;ix++){ 
 					d_xg[ix] += m[ix][iz]*smig[ix][iz];
 				}
-				if (pspi) pspiop(d_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,vref,iref1,iref2,nref,p1,p2,false,false,verbose);
-				else ssop(d_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,p1,p2,false,false,verbose);
+				if (pspi) pspiop(d_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,vref,iref1,iref2,nref,p1,p2,false,false,verbose,kz_eps);
+				else ssop(d_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,p1,p2,false,false,verbose,kz_eps);
 			}
 		}
 		for (ix=0;ix<nmx*nmy;ix++){
@@ -289,7 +291,8 @@ void ssop(complex *d_x,
 		fftwf_plan p1,fftwf_plan p2,
 		bool adj, 
 		bool src,
-		bool verbose)
+		bool verbose,
+		float kz_eps)
 {
 	float kx,ky;
 	complex L;
@@ -306,7 +309,7 @@ void ssop(complex *d_x,
 	a  = fftwf_malloc(sizeof(fftwf_complex) * nkx*nky);
 	b  = fftwf_malloc(sizeof(fftwf_complex) * nkx*nky);
 	d_k = alloc1complex(nkx*nky);
-	w2 = 0.5f + w*I;
+	w2 = kz_eps + w*I;
 	w2 *= w2;
 	w2 *= po[iz];
 	w2 *= po[iz];
@@ -392,7 +395,8 @@ void pspiop(complex *d_x,
 		fftwf_plan p1,fftwf_plan p2,
 		bool adj, 
 		bool src,
-		bool verbose)
+		bool verbose,
+		float kz_eps)
 {
 
 
@@ -424,7 +428,7 @@ void pspiop(complex *d_x,
 		}
 		fftwf_execute_dft(p1,a,a);
 		for (iref=0;iref<nref;iref++){
-			w2 = 0.5f + w*I;
+			w2 = kz_eps + w*I;
 			w2 *= w2;
 			w2 /= vref[iref][iz];
 			w2 /= vref[iref][iz];

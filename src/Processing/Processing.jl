@@ -1,6 +1,8 @@
 export  SeisPOCS,
 SeisAGC,
 SeisSmooth2,
+SeisSmooth1,
+SeisEnvelope,
 SeisDiff,
 SeisGSC,
 SeisGain,
@@ -25,6 +27,8 @@ SeisMute
 include("SeisPOCS.jl")
 include("SeisAGC.jl")
 include("SeisSmooth2.jl")
+include("SeisSmooth1.jl")
+include("SeisEnvelope.jl")
 include("SeisDiff.jl")
 include("SeisGSC.jl")
 include("SeisGain.jl")

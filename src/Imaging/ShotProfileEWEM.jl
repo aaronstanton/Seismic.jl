@@ -37,7 +37,7 @@
 
 											"""
 
-											function ShotProfileEWEM(m::Array{ASCIIString,1},d::Array{ASCIIString,1},adj=true;pspi=true,nref=5,vp="vp.seis",vs="vs.seis",angx="angx.seis",angy="angy.seis",wav="wav.seis",sz=0.,gz=0.,nangx=1,oangx=0,dangx=1,nangy=1,oangy=0,dangy=1,fmin=0,fmax=80,padt=1,padx=1,verbose=false,sx=[0],sy=[0])
+											function ShotProfileEWEM(m::Array{ASCIIString,1},d::Array{ASCIIString,1},adj=true;pspi=true,nref=5,vp="vp.seis",vs="vs.seis",angx="angx.seis",angy="angy.seis",wav="wav.seis",sz=0.,gz=0.,nangx=1,oangx=0,dangx=1,nangy=1,oangy=0,dangy=1,fmin=0,fmax=80,padt=1,padx=1,verbose=false,sx=[0],sy=[0],kz_eps=0.0005)
 
 												nshot = length(sx)	
 												v,h,e = SeisRead(vp)
@@ -69,7 +69,7 @@
 
 												shot_list = Array(Shot3C,nshot)
 												for ishot = 1 : nshot
-													shot_list[ishot] = Shot3C(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+													shot_list[ishot] = Shot3C(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
 													shot_list[ishot].ux = join([d[1] "_shot_" Int(floor(sx[ishot])) "_" Int(floor(sy[ishot]))])
 													shot_list[ishot].uy = join([d[2] "_shot_" Int(floor(sx[ishot])) "_" Int(floor(sy[ishot]))])
 													shot_list[ishot].uz = join([d[3] "_shot_" Int(floor(sx[ishot])) "_" Int(floor(sy[ishot]))])
@@ -93,6 +93,7 @@
 													shot_list[ishot].pspi = (pspi == true) ? "y" : "n"
 													shot_list[ishot].nref = nref
 													shot_list[ishot].verbose = (verbose == true) ? "y" : "n"
+													shot_list[ishot].kz_eps = kz_eps
 												end
 
 												if (nangx != 1 || nangy != 1)
@@ -438,6 +439,7 @@
 												pspi
 												nref
 												verbose
+												kz_eps
 											end
 
 											function shotewem(shot)
@@ -455,7 +457,7 @@
 												join(["sx=",shot.sx]), join(["sy=",shot.sy]),  join(["sz=",shot.sz]),  join(["gz=",shot.gz]), 
 												join(["fmin=",shot.fmin]),  join(["fmax=",shot.fmax]), 
 												join(["padt=",shot.padt]),  join(["padx=",shot.padx]), 
-												join(["verbose=",shot.verbose]) ] 
+												join(["verbose=",shot.verbose]), join(["kz_eps=",shot.kz_eps]) ]
 												@compat a = ccall((:main, "shotewem"), Int32, (Int32, Ptr{Ptr{UInt8}}), length(argv), argv)                    
 												return(a)
 

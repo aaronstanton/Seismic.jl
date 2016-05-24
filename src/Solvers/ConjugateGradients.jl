@@ -15,7 +15,7 @@ function ConjugateGradients(d,operators,parameters;Niter=10,mu=0)
 		t = LinearOperator(s,operators,parameters,adj=false)
 		tt = mu.*s
 		delta = InnerProduct(t,t) + InnerProduct(tt,tt)
-		alpha = gamma_old/(delta + 1.e-20)
+		alpha = gamma_old/delta
 		m = m + alpha*s
 		r = r - alpha*t
 		rr = rr - alpha*tt
@@ -23,7 +23,7 @@ function ConjugateGradients(d,operators,parameters;Niter=10,mu=0)
 		g = LinearOperator(r,operators,parameters,adj=true)
 		g = g + mu*rr
 		gamma = InnerProduct(g,g)
-		beta = gamma/(gamma_old + 1.e-20)
+		beta = gamma/gamma_old
 		gamma_old = copy(gamma)
 		s = beta*s + g
 	end
@@ -62,7 +62,7 @@ function ConjugateGradients(m::ASCIIString,d::ASCIIString,operators,parameters,c
 		LinearOperator(s,t,operators,parameters,adj=false)
 		CGStep(tt,s,a=0.,b=mu)
 		delta = InnerProduct(t,t) + InnerProduct(tt,tt)
-		alpha = gamma_old/(delta + 1.e-20)
+		alpha = gamma_old/delta
 		CGStep(m,s,a=1.,b=alpha)  
 		CGStep(r,t,a=1.,b=-alpha)
 		CGStep(rr,tt,a=1.,b=-alpha)
@@ -74,7 +74,7 @@ function ConjugateGradients(m::ASCIIString,d::ASCIIString,operators,parameters,c
 		CGStep(g,rr,a=1.,b=mu)
 		gamma = InnerProduct(g,g)
 		println("gamma=",gamma)
-		beta = gamma/(gamma_old + 1.e-20)
+		beta = gamma/gamma_old
 		gamma_old = copy(gamma)
 		CGStep(s,g,a=beta,b=1.)
 	end
@@ -123,7 +123,7 @@ function ConjugateGradients(m::Array{ASCIIString,1},d::Array{ASCIIString,1},oper
 		println("delta = ",delta)
 		println("gamma_old = ",gamma_old)
 		println("delta = ",delta)
-		alpha = gamma_old/(delta + 1.e-20)
+		alpha = gamma_old/delta
 		println("alpha = ",alpha)
 		CGStep(m,s,a=[1.;1.;1.],b=[alpha;alpha;alpha])  
 		CGStep(r,t,a=[1.;1.;1.],b=-[alpha;alpha;alpha])
@@ -137,7 +137,7 @@ function ConjugateGradients(m::Array{ASCIIString,1},d::Array{ASCIIString,1},oper
 		gamma = InnerProduct(g,g)
 		println("gamma = ",gamma)
 		println("gamma_old = ",gamma_old)
-		beta = gamma/(gamma_old + 1.e-20)
+		beta = gamma/gamma_old
 		println("beta = ",beta)
 		gamma_old = copy(gamma)
 		CGStep(s,g,a=[beta;beta;beta],b=[1.;1.;1.])
