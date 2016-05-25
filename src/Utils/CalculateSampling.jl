@@ -1,8 +1,5 @@
 function CalculateSampling(in,h;cutoff=1e-10)
 
-	println("size(in)=",size(in))
-
-	cutoff = 1e-10
 	itrace = 1
 	wd = zeros(Float32,size(in))
 	for itrace = 1 : size(in[:,:],2)

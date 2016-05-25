@@ -1,6 +1,7 @@
 export PostStackWEM,
 ShotProfileWEM,
 ShotProfileEWEM,
+ShotProfileEWEMHessian,
 ShotProfileLSWEM,
 ShotProfileLSEWEM,
 WaveSep,
@@ -9,6 +10,7 @@ SeisPSTM
 include("PostStackWEM.jl")
 include("ShotProfileWEM.jl")
 include("ShotProfileEWEM.jl")
+include("ShotProfileEWEMHessian.jl")
 include("ShotProfileLSWEM.jl")
 include("ShotProfileLSEWEM.jl")
 include("WaveSep.jl")

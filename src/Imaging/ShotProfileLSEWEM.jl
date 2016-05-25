@@ -28,6 +28,14 @@ function ShotProfileLSEWEM(m::Array{ASCIIString,1},d::Array{ASCIIString,1};Niter
 		end	
 	end
 	ConjugateGradients(m,d,operators,parameters,cost,Niter=Niter,mu=mu)
+
+	if (wm != "NULL")
+		m_w = [join(["tmp_LSM_m1_w_",rand_string]);join(["tmp_LSM_m2_w_",rand_string]);join(["tmp_LSM_m3_w_",rand_string])]
+		WeightingOp(m,m_w,false;w=wm)
+		SeisCopy(m_w,m)
+		SeisRemove(m_w)	
+	end
+
 	SeisRemove(wd)
 
 end
