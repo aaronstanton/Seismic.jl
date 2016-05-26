@@ -19,5 +19,8 @@ wavesep.so:wavesep.c wem.c ${SEISMIC_PATH}/src/API/c/seismic.c
 compute_angles.so:compute_angles.c wem.c ${SEISMIC_PATH}/src/API/c/seismic.c
 		${CC} ${INCLUDES} -o $@ ${CFLAGS} compute_angles.c wem.c ${SEISMIC_PATH}/src/API/c/seismic.c ${LIBS} 
 
+shotillum.so:shotillum.c illum.c ${SEISMIC_PATH}/src/API/c/seismic.c
+		${CC} ${INCLUDES} -o $@ ${CFLAGS} shotillum.c illum.c ${SEISMIC_PATH}/src/API/c/seismic.c ${LIBS} 
+
 clean:
 		-rm -f *.o *.so
