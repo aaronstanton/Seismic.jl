@@ -271,29 +271,31 @@ void SeisRead(char *in,float **d,struct SeisHeader *h, struct SeisFileHeader *fh
 {
 	int ix,nx;
 	FILE *fp_d,*fp_h;
+	size_t s=NULL;
 	InitFileHeader(fh);
 	ReadFileHeader(in,fh);
 	nx = fh->n2*fh->n3*fh->n4*fh->n5;
 	fp_h = fopen(fh->hname,"rb");
 	if (!fp_h){
 		printf("SeisRead: Unable to open %s\n",fh->hname);
-		return;
+		exit(0);
 	}
 	for (ix=0; ix<nx; ix++){
-		fread(&h[ix],sizeof(struct SeisHeader),1,fp_h);
+		s = fread(&h[ix],sizeof(struct SeisHeader),1,fp_h);
+		s++;
 	}
 	fclose(fp_h);
 	fp_d=fopen(fh->dname,"rb");
 	if (!fp_d){
 		printf("SeisRead: Unable to open %s\n",fh->dname);
-		return;
+		exit(0);
 	}
 	for (ix=0; ix<nx; ix++){	
-		fread(d[ix],sizeof(float),fh->n1,fp_d);
+		s = fread(d[ix],sizeof(float),fh->n1,fp_d);
+		s++;
 	}	
 	fclose(fp_d);
 	
-	return;
 }
 
 /* write a seis file */
@@ -323,7 +325,7 @@ void SeisWrite(char *out,float **d,struct SeisHeader *h, struct SeisFileHeader *
 	fp_h = fopen(fh->hname,"wb");
 	if (!fp_h){
 		printf("SeisWrite: Unable to open %s\n",fh->hname);
-		return;
+		exit(0);
 	}
 	for (ix=0; ix<nx; ix++){	
 		fwrite(&h[ix],sizeof(struct SeisHeader),1,fp_h);
@@ -333,14 +335,13 @@ void SeisWrite(char *out,float **d,struct SeisHeader *h, struct SeisFileHeader *
 	fp_d=fopen(fh->dname,"wb");
 	if (!fp_d){
 		printf("SeisWrite: Unable to open %s\n",fh->dname);
-		return;
+		exit(0);
 	}
 	for (ix=0; ix<nx; ix++){	
 		fwrite(d[ix],sizeof(float),fh->n1,fp_d);
 	}
 	fclose(fp_d);
 	
-	return;
 }
 
 void InitFileHeader(struct SeisFileHeader *fh)
@@ -416,7 +417,6 @@ void ReadFileHeader(char *filename,struct SeisFileHeader *fh)
 		if (strstr(fline, "d5=") != NULL) sscanf(fline,"%[^= ]=%f", tmp, &fh->d5);
 	}
 	fclose(fp);
-	return;
 
 }
 
@@ -456,6 +456,5 @@ void WriteFileHeader(char *filename,struct SeisFileHeader *fh)
 	fprintf(fp, "	in=\"%s\"\n",fh->dname);
 	fprintf(fp, "	headers=\"%s\"\n",fh->hname);
 	fclose(fp);
-	return;
 
 }

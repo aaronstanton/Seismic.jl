@@ -373,9 +373,9 @@ void elastic_extrap1f(float **mpp, float **mps1, float **mps2,
 	w = iw*dw;
 	for (ix=0;ix<nmx*nmy;ix++){ 
 		up_xs[ix] = u_s_wx[ix][iw]/sqrtf((float) ntfft);
-		ux_xg[ix] = pow(w,2)*ux_g_wx[ix][iw]/sqrtf((float) ntfft); // *pow(w,2)
-		uy_xg[ix] = pow(w,2)*uy_g_wx[ix][iw]/sqrtf((float) ntfft); // *pow(w,2)
-		uz_xg[ix] = pow(w,2)*uz_g_wx[ix][iw]/sqrtf((float) ntfft); // *pow(w,2)
+		ux_xg[ix] = ux_g_wx[ix][iw]/sqrtf((float) ntfft); // *pow(w,2)
+		uy_xg[ix] = uy_g_wx[ix][iw]/sqrtf((float) ntfft); // *pow(w,2)
+		uz_xg[ix] = uz_g_wx[ix][iw]/sqrtf((float) ntfft); // *pow(w,2)
 
 	}
 	for (ix=0;ix<nmx*nmy;ix++) up_xs[ix] = u_s_wx[ix][iw]/sqrtf((float) ntfft);
@@ -442,9 +442,9 @@ void elastic_extrap1f(float **mpp, float **mps1, float **mps2,
 			}
 		}
 		for (ix=0;ix<nmx*nmy;ix++){
-			ux_g_wx[ix][iw] = pow(w,2)*ux_xg[ix]/sqrtf((float) ntfft); // *pow(w,2)
-			uy_g_wx[ix][iw] = pow(w,2)*uy_xg[ix]/sqrtf((float) ntfft); // *pow(w,2)
-			uz_g_wx[ix][iw] = pow(w,2)*uz_xg[ix]/sqrtf((float) ntfft); // *pow(w,2)
+			ux_g_wx[ix][iw] = ux_xg[ix]/sqrtf((float) ntfft); // *pow(w,2)
+			uy_g_wx[ix][iw] = uy_xg[ix]/sqrtf((float) ntfft); // *pow(w,2)
+			uz_g_wx[ix][iw] = uz_xg[ix]/sqrtf((float) ntfft); // *pow(w,2)
 		}
 	}
 

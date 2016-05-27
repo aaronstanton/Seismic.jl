@@ -38,51 +38,42 @@ function ShotProfileEWEMHessian(w::Array{ASCIIString,1},d::Array{ASCIIString,1};
 	# normalize
 	m1,h,e = SeisRead(mref_env_s[1])
 	m2,h,e = SeisRead(mref_fwd_adj_env_s[1])
-	if maximum(abs(m1)) > 0. 
-		m1 = m1/maximum(abs(m1))
-	end
-	if maximum(abs(m2)) > 0. 
-		m2 = m2/maximum(abs(m2))
-	end
 	# calculate weight
 	w1 = m1./(m2 + 0.01)
+	if maximum(abs(w1)) > 0. 
+		w1 = w1/maximum(abs(w1))
+	end
 	SeisWrite(w[1],w1,h,e);
 
 	# normalize
 	m1,h,e = SeisRead(mref_env_s[2])
 	m2,h,e = SeisRead(mref_fwd_adj_env_s[2])
-	if maximum(abs(m1)) > 0. 
-		m1 = m1/maximum(abs(m1))
-	end
-	if maximum(abs(m2)) > 0. 
-		m2 = m2/maximum(abs(m2))
-	end
 	# calculate weight
 	w1 = m1./(m2 + 0.01)
+	if maximum(abs(w1)) > 0. 
+		w1 = w1/maximum(abs(w1))
+	end
 	SeisWrite(w[2],w1,h,e);
 
 	# normalize
 	m1,h,e = SeisRead(mref_env_s[3])
 	m2,h,e = SeisRead(mref_fwd_adj_env_s[3])
-	if maximum(abs(m1)) > 0. 
-		m1 = m1/maximum(abs(m1))
-	end
-	if maximum(abs(m2)) > 0. 
-		m2 = m2/maximum(abs(m2))
-	end
 	# calculate weight
 	w1 = m1./(m2 + 0.01)
+	if maximum(abs(w1)) > 0. 
+		w1 = w1/maximum(abs(w1))
+	end
 	SeisWrite(w[3],w1,h,e);
 
-	#SeisRemove(mref)
-	#SeisRemove(mref_fwd)
-	#SeisRemove(mref_fwd_wd)
-	#SeisRemove(wd)
-	#SeisRemove(mref_fwd_adj)
-	#SeisRemove(mref_env)
-	#SeisRemove(mref_env_s)
-	#SeisRemove(mref_fwd_adj_env)
-	#SeisRemove(mref_fwd_adj_env_s)
+	SeisRemove(mref)
+	SeisRemove(mref_fwd)
+	SeisRemove(mref_fwd_wd)
+	SeisRemove(wd)
+	SeisRemove(mref_fwd_adj)
+	SeisRemove(mref_env)
+	SeisRemove(mref_env_s)
+	SeisRemove(mref_fwd_adj_env)
+	SeisRemove(mref_fwd_adj_env_s)
 
 end
 

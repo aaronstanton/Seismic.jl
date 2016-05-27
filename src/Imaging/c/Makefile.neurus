@@ -1,11 +1,11 @@
 SHELL = /bin/sh
 
-CC = gcc -std=c99 -fPIC
+CC = gcc -std=c99 -O4 -fPIC
 CFLAGS = -shared -fopenmp -Wall 
 INCLUDES = -I. -I${SEISMIC_PATH}/src/API/c
 LIBS =  -lm -lfftw3f
 
-all: shotwem.so shotewem.so wavesep.so compute_angles.so
+all: shotwem.so shotewem.so wavesep.so compute_angles.so shotillum.so
 
 shotwem.so:shotwem.c wem.c ${SEISMIC_PATH}/src/API/c/seismic.c
 		${CC} ${INCLUDES} -o $@ ${CFLAGS} shotwem.c wem.c ${SEISMIC_PATH}/src/API/c/seismic.c ${LIBS} 
