@@ -228,7 +228,7 @@ void extrap1f(float **m,complex **d_g_wx, complex **d_s_wx,
 	if (adj){
 		for (ix=0;ix<nmx*nmy;ix++){ 
 			d_xs[ix] = d_s_wx[ix][iw]/sqrtf((float) ntfft);
-			d_xg[ix] = d_g_wx[ix][iw]/sqrtf((float) ntfft); //powf(w,2)*
+			d_xg[ix] = powf(w,2)*d_g_wx[ix][iw]/sqrtf((float) ntfft); //powf(w,2)*
 		}
 		for (iz=0;iz<nz;iz++){ // extrapolate source and receiver wavefields
 			z = oz + dz*iz;
@@ -274,7 +274,7 @@ void extrap1f(float **m,complex **d_g_wx, complex **d_s_wx,
 			}
 		}
 		for (ix=0;ix<nmx*nmy;ix++){
-			d_g_wx[ix][iw] = d_xg[ix]/sqrtf((float) ntfft);// powf(w,2)*
+			d_g_wx[ix][iw] = powf(w,2)*d_xg[ix]/sqrtf((float) ntfft);// powf(w,2)*
 		}
 		free2complex(smig);
 	}

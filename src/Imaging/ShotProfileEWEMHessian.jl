@@ -1,4 +1,4 @@
-function ShotProfileEWEMHessian(w::Array{ASCIIString,1},d::Array{ASCIIString,1};pspi=true,nref=5,vp="vp.seis",vs="vs.seis",angx="angx.seis",angy="angy.seis",wav="wav.seis",sz=0.,gz=0.,nangx=1,oangx=0,dangx=1,nangy=1,oangy=0,dangy=1,fmin=0,fmax=80,padt=1,padx=1,verbose=false,sx=[0],sy=[0],kz_eps=0.0005)
+function ShotProfileEWEMHessian(w::Array{ASCIIString,1},d::Array{ASCIIString,1};pspi=true,nref=5,vp="vp.seis",vs="vs.seis",angx="angx.seis",angy="angy.seis",wav="wav.seis",sz=0.,gz=0.,nangx=1,oangx=0,dangx=1,nangy=1,oangy=0,dangy=1,fmin=0,fmax=80,padt=1,padx=1,verbose=false,sx=[0],sy=[0],kz_eps=0.0005,eps=0.01)
 
 	# approximate Hessian for shot profile elastic wave equation migration operator
 	rand_string = string(round(Int,rand()*100000))
@@ -39,7 +39,7 @@ function ShotProfileEWEMHessian(w::Array{ASCIIString,1},d::Array{ASCIIString,1};
 	m1,h,e = SeisRead(mref_env_s[1])
 	m2,h,e = SeisRead(mref_fwd_adj_env_s[1])
 	# calculate weight
-	w1 = m1./(m2 + 0.01)
+	w1 = m1./(m2 + eps)
 	if maximum(abs(w1)) > 0. 
 		w1 = w1/maximum(abs(w1))
 	end
@@ -49,7 +49,7 @@ function ShotProfileEWEMHessian(w::Array{ASCIIString,1},d::Array{ASCIIString,1};
 	m1,h,e = SeisRead(mref_env_s[2])
 	m2,h,e = SeisRead(mref_fwd_adj_env_s[2])
 	# calculate weight
-	w1 = m1./(m2 + 0.01)
+	w1 = m1./(m2 + eps)
 	if maximum(abs(w1)) > 0. 
 		w1 = w1/maximum(abs(w1))
 	end
@@ -59,7 +59,7 @@ function ShotProfileEWEMHessian(w::Array{ASCIIString,1},d::Array{ASCIIString,1};
 	m1,h,e = SeisRead(mref_env_s[3])
 	m2,h,e = SeisRead(mref_fwd_adj_env_s[3])
 	# calculate weight
-	w1 = m1./(m2 + 0.01)
+	w1 = m1./(m2 + eps)
 	if maximum(abs(w1)) > 0. 
 		w1 = w1/maximum(abs(w1))
 	end

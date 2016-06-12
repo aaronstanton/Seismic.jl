@@ -2,6 +2,7 @@ export PostStackWEM,
 ShotProfileWEM,
 ShotProfileEWEM,
 ShotProfileEWEMHessian,
+ShotProfileEWEMHessian2,
 ShotIllumination,
 ShotProfileLSWEM,
 ShotProfileLSEWEM,
@@ -12,6 +13,7 @@ include("PostStackWEM.jl")
 include("ShotProfileWEM.jl")
 include("ShotProfileEWEM.jl")
 include("ShotProfileEWEMHessian.jl")
+include("ShotProfileEWEMHessian2.jl")
 include("ShotIllumination.jl")
 include("ShotProfileLSWEM.jl")
 include("ShotProfileLSEWEM.jl")

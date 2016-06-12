@@ -1,51 +1,49 @@
 function SmoothGathers(m::ASCIIString,d::ASCIIString,adj;Nsmooth=3,Nrepeat=1)
 
-	@compat parameters = Dict(:Nsmooth=>Nsmooth,:Nrepeat=>Nrepeat)
-	SeisProcess(in,out,[smooth_angles],[parameters];group="gather",key=["imx";"imy"])
 	if (adj==false)
-		SeisProcess(m,d,param)
-	else
-		SeisProcess(d,m,param)
-	end
-end
-
-function smooth_angles(d,h;Nsmooth=3,Nrepeat=1)
-
-	min_iang = h[1].iang
-	max_iang = h[end].iang
-	min_iaz = h[1].iaz
-	max_iaz = h[end].iaz
-	nang = max_iang - min_iang + 1
-	naz = max_iaz - min_iaz + 1
-	nz = convert(Int64,h[1].n1)
-	a = vec(zeros(nang,1))
-	d = reshape(d,nz,nang,naz)	
-	for iz = 1 : nz
-		for iaz = 1 : naz
-			for iang = 1 : nang
-				a[iang] = d[iz,iang,iaz]
-			end
-			for irepeat = 1 : Nrepeat
-				a = mean_filter(a,nang,Nsmooth)
-			end
-			for iang = 1 : nang
-				d[iz,iang,iaz] = a[iang]
-			end
+		m1,h,ext = SeisRead(m)
+		ngather = size(m1,5)
+		for igather = 1 : ngather
+			A = squeeze(m1[:,1,:,1,igather],2);
+			A = smooth_angles(A;Nsmooth=Nsmooth,Nrepeat=Nrepeat)
+			m1[:,1,:,1,igather] = A
 		end
+		SeisWrite(d,m1,h,ext)
+	else
+		d1,h,ext = SeisRead(d)
+		ngather = size(d1,5)
+		for igather = 1 : ngather
+			A = squeeze(d1[:,1,:,1,igather],2);
+			A = smooth_angles(A;Nsmooth=Nsmooth,Nrepeat=Nrepeat)
+			d1[:,1,:,1,igather] = A
+		end
+		SeisWrite(m,d1,h,ext)
 	end
-
-	return d[1:nz,:],h;
+	
 end
 
-function mean_filter(a,nx,nxw)
+function smooth_angles(A;Nsmooth=3,Nrepeat=1)
 
-	b = vec(zeros(nx,1))
-	for ix = 1 : nx
+	for iz = 1 : size(A,1)
+		a = A[iz,:]
+		for irepeat = 1 : Nrepeat
+			a = mean_filter(a,Nsmooth)
+		end
+		A[iz,:] = a
+	end
+
+	return A;
+end
+
+function mean_filter(a,nw)
+
+	b = vec(zeros(length(a),1))
+	for ix = 1 : length(a)
 		sum  = 0.
 		nsum = 0.
-		for ixw = 1 : nxw
-			index1 = ix - floor(nxw/2) - 1 + ixw
-			if (index1>0 && index1<nx)
+		for iw = 1 : nw
+			index1 = ix - Int(floor(nw/2)) - 1 + iw
+			if (index1>0 && index1<length(a))
 				sum += a[index1]
 				nsum += 1.
 			end
@@ -54,4 +52,3 @@ function mean_filter(a,nx,nxw)
 	end
 	return b
 end
-
