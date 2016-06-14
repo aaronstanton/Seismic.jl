@@ -23,7 +23,8 @@ function SeisMute(in,h::Array{Header,1};offset=[0],tmute=0.,vmute=1500.,taper=0.
 	nt,nx = size(in)
 	offset = Float32[]
 	for itrace = 1 : nx
-		push!(offset,sqrt((h[itrace].gx - h[itrace].sx)^2 + (h[itrace].gy - h[itrace].sy)^2 ))
+		#push!(offset,sqrt((h[itrace].gx - h[itrace].sx)^2 + (h[itrace].gy - h[itrace].sy)^2 ))
+		push!(offset,abs(h[itrace].h))
 	end
 	out = SeisMute(in,offset=offset,tmute=tmute,vmute=vmute,taper=taper,dt=h[1].d1)	
 	
