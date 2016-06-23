@@ -1,6 +1,8 @@
 export PostStackWEM,
 ShotProfileWEM,
+ShotProfileWEM_suboff,
 ShotProfileEWEM,
+ShotProfileEWEM_suboff,
 ShotProfileEWEMHessian,
 ShotProfileEWEMHessian2,
 ShotIllumination,
@@ -8,10 +10,13 @@ ShotProfileLSWEM,
 ShotProfileLSEWEM,
 WaveSep,
 ComputeAngles,
-SeisPSTM
+SeisPSTM,
+OffsetToAngle
 include("PostStackWEM.jl")
 include("ShotProfileWEM.jl")
+include("ShotProfileWEM_suboff.jl")
 include("ShotProfileEWEM.jl")
+include("ShotProfileEWEM_suboff.jl")
 include("ShotProfileEWEMHessian.jl")
 include("ShotProfileEWEMHessian2.jl")
 include("ShotIllumination.jl")
@@ -20,3 +25,4 @@ include("ShotProfileLSEWEM.jl")
 include("WaveSep.jl")
 include("ComputeAngles.jl")
 include("SeisPSTM.jl")
+include("OffsetToAngle.jl")

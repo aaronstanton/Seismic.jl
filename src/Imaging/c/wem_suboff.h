@@ -1,20 +1,24 @@
-#ifndef _wem_h_
-#define _wem_h_
-void wem(float **d, float **m, float **wav,
-         int nt, float ot, float dt, 
-         int nmx,float omx, float dmx,
-         int nmy,float omy, float dmy,
-         float sx,float sy,
-         int nz, float oz, float dz, float gz, float sz,
-         float **vel, int nref, float fmin, float fmax,
-         int padt, int padx,
-         bool adj, bool pspi, bool verbose,
-         float kz_eps);
+#ifndef _wem_suboff_h_
+#define _wem_suboff_h_
+void wem_suboff(float **d, float **m, float **wav,
+		int nt, float ot, float dt, 
+		int nmx,float omx, float dmx,
+		int nmy,float omy, float dmy,
+		int nhx,float ohx, float dhx,
+		int nhy,float ohy, float dhy,
+		float sx,float sy,
+		int nz, float oz, float dz, float gz, float sz,
+		float **vel, int nref, float fmin, float fmax,
+		int padt, int padx,
+		bool adj, bool pspi, bool verbose,
+		float kz_eps);
 void extrap1f(float **m,complex **d_g_wx, complex **d_s_wx,
               int iw, int ang_iw_max, int nw,int ifmax,int ntfft,float dw,float dkx,float dky,int nkx,int nky,
               int nz, float oz, float dz, float gz, float sz,
               int nmx,float omx, float dmx,
               int nmy,float omy, float dmy,
+			  int nhx,float ohx, float dhx,
+			  int nhy,float ohy, float dhy,
               int nthread,
               float **v,float *po,float **pd,
               float **vref, int **iref1, int **iref2, int nref,

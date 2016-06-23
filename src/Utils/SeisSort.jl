@@ -25,12 +25,11 @@ include("Header.jl")
 
 """
 function SeisSort(in, out;key=["imx","imy"],rev=false,ntrace=100000)
-
-	filename_h = success(`grep "headers=" $in`) ? chomp(readall(`grep "headers=" $in` |> `tail -1` |> `awk '{print substr($1,10,length($1)-10) }' `)) : "NULL"
+	filename_h = ParseHeaderName(in)
 	stream_h = open(filename_h)
 	seek(stream_h, header_count["n1"])
 	nt = read(stream_h,Int32)
-	nx = convert(Int64,filesize(stream_h)/(4*length(names(Header))))
+	nx = convert(Int64,filesize(stream_h)/(4*length(fieldnames(Header))))
 	h = Header[]    
 	# find min and max for each key
 	h1 = GrabHeader(stream_h,1)
@@ -61,12 +60,9 @@ function SeisSort(in, out;key=["imx","imy"],rev=false,ntrace=100000)
     DATAPATH = get(ENV,"DATAPATH",join([pwd(),"/"]))
     filename_d_out = join([DATAPATH out "@data@"])
     filename_h_out = join([DATAPATH out "@headers@"])    
-	println(p[1:20])
- 	FetchHeaders(filename_h,out,p,nx)
-    nhead = length(names(Header))
+    nhead = length(fieldnames(Header))
     stream_h = open(filename_h_out)
-    nx = int(filesize(stream_h)/(nhead*4))
-    h = GrabHeader(stream_h,1)
+    nx = Int(floor(filesize(stream_h)/(nhead*4)))
     close(stream_h)
     extent = ReadTextHeader(in)
     extent.n2 = nx
@@ -74,8 +70,10 @@ function SeisSort(in, out;key=["imx","imy"],rev=false,ntrace=100000)
     extent.n4 = 1
     extent.n5 = 1
     WriteTextHeader(out,extent,"native_float",4,filename_d_out,filename_h_out)
+ 	FetchHeaders(filename_h,out,p,nx)
 	Seismic.FetchTraces(in,out)
- 	tmp = join(["tmp_SeisSort_",string(int(rand()*100000))])
+ 	tmp = join(["tmp_SeisSort_",string(Int(floor(rand()*100000)))])
+ 	cp(out,tmp,remove_destination=true);
     @compat SeisProcessHeaders(out,tmp,[UpdateHeader],[Dict(:itmin=>1,:itmax=>nt)])
     filename_h_tmp = join([DATAPATH tmp "@headers@"])    
     filename_h_out = join([DATAPATH out "@headers@"])    

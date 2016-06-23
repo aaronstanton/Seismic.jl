@@ -86,8 +86,6 @@ void wem_suboff(float **d, float **m, float **wav,
 	dky = 2.0*PI/((float) nky)/dmy;
 	dw = 2.0*PI/((float) ntfft)/dt;
 	
-fprintf(stderr,"dw=%f\n",dw);	
-	
 	if(fmax*dt*ntfft+1<nw) ifmax = (int) fmax*dt*ntfft + 1;
 	else ifmax = nw;
 	if(fmin*dt*ntfft+1<ifmax) ifmin = (int) fmin*dt*ntfft;
@@ -163,10 +161,8 @@ fprintf(stderr,"dw=%f\n",dw);
 			for (imy=0;imy<nmy;imy++){
 				for (ihx=0;ihx<nhx;ihx++){
 					for (ihy=0;ihy<nhy;ihy++){
-						for (ithread=0;ithread<nthread;ithread++){
-							for (iz=0;iz<nz;iz++){
-								m_threads[imx*nmy*nhx*nhy + imy*nhx*nhy + ihx*nhy + ihy][iz] = m[imx*nmy*nhx*nhy + imy*nhx*nhy + ihx*nhy + ihy][iz];
-							}
+						for (iz=0;iz<nz;iz++){
+							m_threads[imx*nmy*nhx*nhy + imy*nhx*nhy + ihx*nhy + ihy][iz] = m[imx*nmy*nhx*nhy + imy*nhx*nhy + ihx*nhy + ihy][iz];
 						}
 					}
 				}
@@ -228,8 +224,8 @@ void extrap1f(float **m,complex **d_g_wx, complex **d_s_wx,
 		float kz_eps)   
 /*< extrapolate 1 frequency >*/
 {
-	float w,factor,z;
-	int iz,ix,imx,imy,ithread;
+	float w,factor,z,hx,hy,sx,sy,gx,gy;
+	int iz,ix,imx,imy,ihx,ihy,isx,isy,igx,igy,ithread;
 	complex *d_xg,*d_xs,**smig;
 	ithread = omp_get_thread_num(); 
 	d_xg = alloc1complex(nmx*nmy);
@@ -255,14 +251,30 @@ void extrap1f(float **m,complex **d_g_wx, complex **d_s_wx,
 				else ssop(d_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,p1,p2,true,false,verbose,kz_eps);
 				for (imx=0;imx<nmx;imx++){ 
 					for (imy=0;imy<nmy;imy++){
-		HERE				
-						m[imx*nmy*nhx*nhy*nthread + imy*nhx*nhy*nthread + ihx*nhy*nthread + ihy*nthread + ithread][iz] += factor*crealf(d_xg[imx*nmy + imy]*conjf(d_xs[imx*nmy + imy]));
+          				for (ihx=0;ihx<nhx;ihx++){
+            				hx = ihx*dhx + ohx;
+            				sx = (imx*dmx + omx) - hx;
+            				gx = (imx*dmx + omx) + hx;
+            				isx = (int) truncf((sx - omx)/dmx);
+            				igx = (int) truncf((gx - omx)/dmx);
+            				if (isx >=0 && isx < nmx && igx >=0 && igx < nmx){
+          						for (ihy=0;ihy<nhy;ihy++){
+            						hy = ihy*dhy + ohy;
+            						sy = (imy*dmy + omy) - hy;
+            						gy = (imy*dmy + omy) + hy;
+            						isy = (int) truncf((sy - omy)/dmy);
+            						igy = (int) truncf((gy - omy)/dmy);
+            						if (isy >=0 && isy < nmy && igy >=0 && igy < nmy){
+ 										m[imx*nmy*nhx*nhy*nthread + imy*nhx*nhy*nthread + ihx*nhy*nthread + ihy*nthread + ithread][iz] += factor*crealf(d_xg[igx*nmy + igy]*conjf(d_xs[isx*nmy + isy]));
+          							}
+          						}
+            				}
+          				}
 					}
 				}
 			}
 		}
 	}
-
 	else{
 		smig = alloc2complex(nz,nmx*nmy);
 		for (ix=0;ix<nmx*nmy;ix++) d_xs[ix] = d_s_wx[ix][iw]/sqrtf((float) ntfft);
@@ -281,15 +293,35 @@ void extrap1f(float **m,complex **d_g_wx, complex **d_s_wx,
 		for (iz=nz-1;iz>=0;iz--){ // extrapolate receiver wavefield 
 			z = oz + dz*iz;
 			if (z >= gz){
-				for (ix=0;ix<nmx*nmy;ix++){ 
-					d_xg[ix] += m[ix][iz]*smig[ix][iz];
+				for (imx=0;imx<nmx;imx++){ 
+					for (imy=0;imy<nmy;imy++){
+          				for (ihx=0;ihx<nhx;ihx++){
+            				hx = ihx*dhx + ohx;
+            				sx = (imx*dmx + omx) - hx;
+            				gx = (imx*dmx + omx) + hx;
+            				isx = (int) truncf((sx - omx)/dmx);
+            				igx = (int) truncf((gx - omx)/dmx);
+            				if (isx >=0 && isx < nmx && igx >=0 && igx < nmx){
+          						for (ihy=0;ihy<nhy;ihy++){
+            						hy = ihy*dhy + ohy;
+            						sy = (imy*dmy + omy) - hy;
+            						gy = (imy*dmy + omy) + hy;
+            						isy = (int) truncf((sy - omy)/dmy);
+            						igy = (int) truncf((gy - omy)/dmy);
+            						if (isy >=0 && isy < nmy && igy >=0 && igy < nmy){
+										d_xg[igx*nmy + igy] = d_xg[igx*nmy + igy] + smig[isx*nmy + isy][iz]*m[imx*nmy*nhx*nhy*nthread + imy*nhx*nhy*nthread + ihx*nhy*nthread + ihy*nthread + ithread][iz];
+          							}
+          						}
+            				}
+          				}
+					}
 				}
 				if (pspi) pspiop(d_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,vref,iref1,iref2,nref,p1,p2,false,false,verbose,kz_eps);
 				else ssop(d_xg,w,dkx,dky,nkx,nky,nmx,omx,dmx,nmy,omy,dmy,dz,iz,v,po,pd,p1,p2,false,false,verbose,kz_eps);
 			}
 		}
 		for (ix=0;ix<nmx*nmy;ix++){
-			d_g_wx[ix][iw] = powf(w,2)*d_xg[ix]/sqrtf((float) ntfft);// powf(w,2)*
+			d_g_wx[ix][iw] = powf(w,2)*d_xg[ix]/sqrtf((float) ntfft);// powf(w,2)*			
 		}
 		free2complex(smig);
 	}

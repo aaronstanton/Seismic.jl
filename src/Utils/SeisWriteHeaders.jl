@@ -21,9 +21,5 @@ function SeisWriteHeaders(filename,h;itrace=1,update_tracenum=true)
 	end
 	write(stream_hout,h1)
 	close(stream_hout)
-	
-	# update header file name in text header
-	extent = ReadTextHeader(filename)
-	WriteTextHeader(filename,extent,"native_float",4,filename_d,filename_h)
-	
+		
 end

@@ -21,7 +21,7 @@ include("Header.jl")
 """
 
 function SeisWindow(in::ASCIIString,out::ASCIIString;key=[],minval=[],maxval=[])
-        DATAPATH = get(ENV,"DATAPATH",join([pwd(),"/"]))
+    DATAPATH = get(ENV,"DATAPATH",join([pwd(),"/"]))
 	extent = ReadTextHeader(in)
 	tmin = extent.o1
 	tmax = extent.o1 + extent.d1*(extent.n1-1)
@@ -47,7 +47,7 @@ function SeisWindow(in::ASCIIString,out::ASCIIString;key=[],minval=[],maxval=[])
 	filename_h_out = join([DATAPATH out "@headers@"])	
 	cp(filename_h_tmp,filename_h_out,remove_destination=true);
 	rm(filename_h_tmp);
-	rm(tmp);
+	#rm(tmp);
 end
 
 function FetchTraces(in::ASCIIString,out::ASCIIString;ntrace=500,itmin=round(Int,1),itmax=round(Int,9999999999))

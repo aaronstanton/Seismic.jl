@@ -27,7 +27,7 @@ end
 function SeisDiff(in::ASCIIString,out::ASCIIString;pow=-2,rot=0)
 
 	@compat parameters = Dict(:pow=>pow,:rot=>rot)
-	SeisProcess(in,out,[SeisDiff],[parameters];group="some")
+	SeisProcess(in,out,[SeisDiff],[parameters])
 
 end
 

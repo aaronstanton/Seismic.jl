@@ -1,7 +1,7 @@
 function SeisMute(in;offset=[0.],tmute=0.,vmute=1500.,taper=0.1,dt=0.001)
 
-	nt,nx = size(in)
-	out = copy(in)
+	nt,nx = size(in[:,:])
+	out = copy(in[:,:])
 	for it = 1:nt
 		for ix = 1:nx
 			t = sqrt(tmute^2 + (offset[ix]/vmute).^2)
@@ -35,17 +35,9 @@ function SeisMute(m::ASCIIString,d::ASCIIString,adj;tmute=0.,vmute=1500.,taper=0
 
 	@compat parameters = Dict(:tmute=>tmute,:vmute=>vmute,:taper=>taper)
 	if (adj==true)
-		SeisProcess(d,m,[SeisMute],[parameters];group="some")
+		SeisProcess(d,m,[SeisMute],[parameters];key=["imx"])
 	else
-		SeisProcess(m,d,[SeisMute],[parameters];group="some")
+		SeisProcess(m,d,[SeisMute],[parameters];key=["imx"])
 	end
 
 end
-
-function SeisMute(m::Array{ASCIIString,1},d::Array{ASCIIString,1},adj;tmute=0.,vmute=1500.,taper=0.1)
-
-	for j = 1 : length(m)
-		SeisMute(m[j],d[j],adj;tmute=tmute,vmute=vmute,taper=taper)
-	end     
-
-end                                                                                                                     

@@ -12,7 +12,7 @@ end
 function SeisStack(in::ASCIIString,out::ASCIIString;key=["imx" "imy"],normalize=true)
 
 	@compat parameters = Dict(:normalize=>true)
-	SeisProcess(in,out,[stacktraces],[parameters];group="gather",key=key)
+	SeisProcess(in,out,[stacktraces],[parameters],key=key)
 	DATAPATH = get(ENV,"DATAPATH",join([pwd(),"/"]))
 	filename_data_out = join([DATAPATH out "@data@"])
 	filename_headers_out = join([DATAPATH out "@headers@"])

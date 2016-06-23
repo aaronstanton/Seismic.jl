@@ -233,25 +233,46 @@ end
 
 function ParseHeaderName(filename::ASCIIString)
 
-	return success(`grep "headers=" $filename`) ? chomp(readall(pipeline(`grep "headers=" $filename` ,pipeline(`tail -1` , `awk '{print substr($1,10,length($1)-10) }' `))    )) : "NULL"	
+	f = open(filename,"r")
+	fstring = readall(f)
+	close(f)
+	ini = rsearchindex(fstring, "\theaders=")
+	ini == 0 ? headers = "NULL" : headers = fstring[search(fstring, r"\theaders=.*", ini)][11:end-1]
+	return headers	
 	
 end	
 
 function ParseDataName(filename::ASCIIString)
 
-	return chomp(readall(pipeline(`grep "in=" $filename` ,pipeline(`tail -1` , `awk '{print substr($1,5,length($1)-5) }' `))    ))
+	f = open(filename,"r")
+	fstring = readall(f)
+	close(f)
+	ini = rsearchindex(fstring, "\tin=")
+	ini == 0 ? in = "NULL" : in = fstring[search(fstring, r"\tin=.*", ini)][6:end-1]
+
+	return in
 
 end
 
 function ParseDataFormat(filename::ASCIIString)
 
-	return chomp(readall(pipeline(`grep "data_format" $filename` , pipeline(`tail -1` , `awk '{print substr($1,14,length($1)-14)}'`)) ))
+	f = open(filename,"r")
+	fstring = readall(f)
+	close(f)
+	ini = rsearchindex(fstring, "\tdata_format=")
+	ini == 0 ? data_format = "native_float" : data_format = fstring[search(fstring, r"\tdata_format=.*", ini)][15:end-1]
+	return data_format
 
 end
 
 function ParseDataESize(filename::ASCIIString)
 
-	@compat return parse(Int,chomp(readall(pipeline(`grep "esize" $filename` , pipeline(`tail -1` , `awk '{print substr($1,7,length($1))}'`)) )))
+	f = open(filename,"r")
+	fstring = readall(f)
+	close(f)
+	ini = rsearchindex(fstring, "\tesize=")
+	ini == 0 ? esize = Int32(4) : esize = parse(Int32, fstring[search(fstring, r"\tesize=.*", ini)][8:end])
+	return esize
 
 end
 
@@ -297,32 +318,61 @@ end
 
 function ReadTextHeader(filename)
 
-	@compat n1 = success(`grep "n1" $filename`) ? parse(Int,chomp(readall(pipeline(`grep "n1=" $filename` , pipeline(`tail -1` , `awk '{print substr($1,4,length($1))}'`)) ))) : 1
-	@compat n2 = success(`grep "n2" $filename`) ? parse(Int,chomp(readall(pipeline(`grep "n2=" $filename` , pipeline(`tail -1` , `awk '{print substr($1,4,length($1))}'`)) ))) : 1
-	@compat n3 = success(`grep "n3" $filename`) ? parse(Int,chomp(readall(pipeline(`grep "n3=" $filename` , pipeline(`tail -1` , `awk '{print substr($1,4,length($1))}'`)) ))) : 1
-	@compat n4 = success(`grep "n4" $filename`) ? parse(Int,chomp(readall(pipeline(`grep "n4=" $filename` , pipeline(`tail -1` , `awk '{print substr($1,4,length($1))}'`)) ))) : 1
-	@compat n5 = success(`grep "n5" $filename`) ? parse(Int,chomp(readall(pipeline(`grep "n5=" $filename` , pipeline(`tail -1` , `awk '{print substr($1,4,length($1))}'`)) ))) : 1
-	o1 = success(`grep "o1=" $filename`) ? float(chomp(readall(pipeline(`grep "o1=" $filename` , pipeline(`tail -1` , `awk '{print substr($1,4,length($1))}'`)) ))) : 0
-	o2 = success(`grep "o2=" $filename`) ? float(chomp(readall(pipeline(`grep "o2=" $filename` , pipeline(`tail -1` , `awk '{print substr($1,4,length($1))}'`)) ))) : 0
-	o3 = success(`grep "o3=" $filename`) ? float(chomp(readall(pipeline(`grep "o3=" $filename` , pipeline(`tail -1` , `awk '{print substr($1,4,length($1))}'`)) ))) : 0
-	o4 = success(`grep "o4=" $filename`) ? float(chomp(readall(pipeline(`grep "o4=" $filename` , pipeline(`tail -1` , `awk '{print substr($1,4,length($1))}'`)) ))) : 0
-	o5 = success(`grep "o5=" $filename`) ? float(chomp(readall(pipeline(`grep "o5=" $filename` , pipeline(`tail -1` , `awk '{print substr($1,4,length($1))}'`)) ))) : 0
-	d1 = success(`grep "d1=" $filename`) ? float(chomp(readall(pipeline(`grep "d1=" $filename` , pipeline(`tail -1` , `awk '{print substr($1,4,length($1))}'`)) ))) : 1
-	d2 = success(`grep "d2=" $filename`) ? float(chomp(readall(pipeline(`grep "d2=" $filename` , pipeline(`tail -1` , `awk '{print substr($1,4,length($1))}'`)) ))) : 1
-	d3 = success(`grep "d3=" $filename`) ? float(chomp(readall(pipeline(`grep "d3=" $filename` , pipeline(`tail -1` , `awk '{print substr($1,4,length($1))}'`)) ))) : 1
-	d4 = success(`grep "d4=" $filename`) ? float(chomp(readall(pipeline(`grep "d4=" $filename` , pipeline(`tail -1` , `awk '{print substr($1,4,length($1))}'`)) ))) : 1
-	d5 = success(`grep "d5=" $filename`) ? float(chomp(readall(pipeline(`grep "d5=" $filename` , pipeline(`tail -1` , `awk '{print substr($1,4,length($1))}'`)) ))) : 1
-	label1 = success(`grep "label1=" $filename`) ? chomp(readall(pipeline(`grep "label1=" $filename` , pipeline(`tail -1` , `awk '{print substr($0,10,length($0)-10)}'`)) )) : ""
-	label2 = success(`grep "label2=" $filename`) ? chomp(readall(pipeline(`grep "label2=" $filename` , pipeline(`tail -1` , `awk '{print substr($0,10,length($0)-10)}'`)) )) : ""
-	label3 = success(`grep "label3=" $filename`) ? chomp(readall(pipeline(`grep "label3=" $filename` , pipeline(`tail -1` , `awk '{print substr($0,10,length($0)-10)}'`)) )) : ""
-	label4 = success(`grep "label4=" $filename`) ? chomp(readall(pipeline(`grep "label4=" $filename` , pipeline(`tail -1` , `awk '{print substr($0,10,length($0)-10)}'`)) )) : ""
-	label5 = success(`grep "label5=" $filename`) ? chomp(readall(pipeline(`grep "label5=" $filename` , pipeline(`tail -1` , `awk '{print substr($0,10,length($0)-10)}'`)) )) : ""
-	unit1 = success(`grep "unit1=" $filename`) ? chomp(readall(pipeline(`grep "unit1=" $filename` , pipeline(`tail -1` , `awk '{print substr($0,9,length($0)-9)}'`)) )) : ""
-	unit2 = success(`grep "unit2=" $filename`) ? chomp(readall(pipeline(`grep "unit2=" $filename` , pipeline(`tail -1` , `awk '{print substr($0,9,length($0)-9)}'`)) )) : ""
-	unit3 = success(`grep "unit3=" $filename`) ? chomp(readall(pipeline(`grep "unit3=" $filename` , pipeline(`tail -1` , `awk '{print substr($0,9,length($0)-9)}'`)) )) : ""
-	unit4 = success(`grep "unit4=" $filename`) ? chomp(readall(pipeline(`grep "unit4=" $filename` , pipeline(`tail -1` , `awk '{print substr($0,9,length($0)-9)}'`)) )) : ""
-	unit5 = success(`grep "unit5=" $filename`) ? chomp(readall(pipeline(`grep "unit5=" $filename` , pipeline(`tail -1` , `awk '{print substr($0,9,length($0)-9)}'`)) )) : ""
-	title = success(`grep "title=" $filename`) ? chomp(readall(pipeline(`grep "title=" $filename` , pipeline(`tail -1` , `awk '{print substr($0,9,length($0)-9)}'`)) )) : ""
+	f = open(filename,"r")
+	fstring = readall(f)
+	close(f)
+	ini = rsearchindex(fstring, "\tn1=")
+	ini == 0 ? n1 = Int32(1) : n1 = parse(Int32, fstring[search(fstring, r"\tn1=.*", ini)][5:end])
+	ini = rsearchindex(fstring, "\tn2=")
+	ini == 0 ? n2 = Int32(1) : n2 = parse(Int32, fstring[search(fstring, r"\tn2=.*", ini)][5:end])
+	ini = rsearchindex(fstring, "\tn3=")
+	ini == 0 ? n3 = Int32(1) : n3 = parse(Int32, fstring[search(fstring, r"\tn3=.*", ini)][5:end])
+	ini = rsearchindex(fstring, "\tn4=")
+	ini == 0 ? n4 = Int32(1) : n4 = parse(Int32, fstring[search(fstring, r"\tn4=.*", ini)][5:end])
+	ini = rsearchindex(fstring, "\tn5=")
+	ini == 0 ? n5 = Int32(1) : n5 = parse(Int32, fstring[search(fstring, r"\tn5=.*", ini)][5:end])
+	ini = rsearchindex(fstring, "\to1=")
+	ini == 0 ? o1 = Float32(0) : o1 = parse(Float32, fstring[search(fstring, r"\to1=.*", ini)][5:end])
+	ini = rsearchindex(fstring, "\to2=")
+	ini == 0 ? o2 = Float32(0) : o2 = parse(Float32, fstring[search(fstring, r"\to2=.*", ini)][5:end])
+	ini = rsearchindex(fstring, "\to3=")
+	ini == 0 ? o3 = Float32(0) : o3 = parse(Float32, fstring[search(fstring, r"\to3=.*", ini)][5:end])
+	ini = rsearchindex(fstring, "\to4=")
+	ini == 0 ? o4 = Float32(0) : o4 = parse(Float32, fstring[search(fstring, r"\to4=.*", ini)][5:end])
+	ini = rsearchindex(fstring, "\to5=")
+	ini == 0 ? o5 = Float32(0) : o5 = parse(Float32, fstring[search(fstring, r"\to5=.*", ini)][5:end])
+	ini = rsearchindex(fstring, "\td1=")
+	ini == 0 ? d1 = Float32(1) : d1 = parse(Float32, fstring[search(fstring, r"\td1=.*", ini)][5:end])
+	ini = rsearchindex(fstring, "\td2=")
+	ini == 0 ? d2 = Float32(1) : d2 = parse(Float32, fstring[search(fstring, r"\td2=.*", ini)][5:end])
+	ini = rsearchindex(fstring, "\td3=")
+	ini == 0 ? d3 = Float32(1) : d3 = parse(Float32, fstring[search(fstring, r"\td3=.*", ini)][5:end])
+	ini = rsearchindex(fstring, "\td4=")
+	ini == 0 ? d4 = Float32(1) : d4 = parse(Float32, fstring[search(fstring, r"\td4=.*", ini)][5:end])
+	ini = rsearchindex(fstring, "\td5=")
+	ini == 0 ? d5 = Float32(1) : d5 = parse(Float32, fstring[search(fstring, r"\td5=.*", ini)][5:end])
+	ini = rsearchindex(fstring, "\tlabel1=")
+	ini == 0 ? label1 = "" : label1 = fstring[search(fstring, r"\tlabel1=.*", ini)][10:end-1]
+	ini = rsearchindex(fstring, "\tlabel2=")
+	ini == 0 ? label2 = "" : label2 = fstring[search(fstring, r"\tlabel2=.*", ini)][10:end-1]
+	ini = rsearchindex(fstring, "\tlabel3=")
+	ini == 0 ? label3 = "" : label3 = fstring[search(fstring, r"\tlabel3=.*", ini)][10:end-1]
+	ini = rsearchindex(fstring, "\tlabel4=")
+	ini == 0 ? label4 = "" : label4 = fstring[search(fstring, r"\tlabel4=.*", ini)][10:end-1]
+	ini = rsearchindex(fstring, "\tlabel5=")
+	ini == 0 ? label5 = "" : label5 = fstring[search(fstring, r"\tlabel5=.*", ini)][10:end-1]
+	ini = rsearchindex(fstring, "\tunit1=")
+	ini == 0 ? unit1 = "" : unit1 = fstring[search(fstring, r"\tunit1=.*", ini)][9:end-1]
+	ini = rsearchindex(fstring, "\tunit2=")
+	ini == 0 ? unit2 = "" : unit2 = fstring[search(fstring, r"\tunit2=.*", ini)][9:end-1]
+	ini = rsearchindex(fstring, "\tunit3=")
+	ini == 0 ? unit3 = "" : unit3 = fstring[search(fstring, r"\tunit3=.*", ini)][9:end-1]
+	ini = rsearchindex(fstring, "\tunit4=")
+	ini == 0 ? unit4 = "" : unit4 = fstring[search(fstring, r"\tunit4=.*", ini)][9:end-1]
+	ini = rsearchindex(fstring, "\tunit5=")
+	ini == 0 ? unit5 = "" : unit5 = fstring[search(fstring, r"\tunit5=.*", ini)][9:end-1]
+	ini = rsearchindex(fstring, "\ttitle=")
+	ini == 0 ? title = "" : title = fstring[search(fstring, r"\ttitle=.*", ini)][9:end-1]
 	extent = Extent(convert(Int32,n1),convert(Int32,n2),convert(Int32,n3),convert(Int32,n4),convert(Int32,n5),
 		   convert(Float32,o1),convert(Float32,o2),convert(Float32,o3),convert(Float32,o4),convert(Float32,o5),
 		   convert(Float32,d1),convert(Float32,d2),convert(Float32,d3),convert(Float32,d4),convert(Float32,d5),

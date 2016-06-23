@@ -5,7 +5,7 @@ CFLAGS = -shared -fopenmp -Wall
 INCLUDES = -I. -I${SEISMIC_PATH}/src/API/c
 LIBS =  -lm -lfftw3f
 
-all: shotwem.so shotewem.so wavesep.so compute_angles.so shotillum.so
+all: shotwem.so shotewem.so wavesep.so compute_angles.so shotillum.so shotwem_suboff.so
 
 shotwem.so:shotwem.c wem.c ${SEISMIC_PATH}/src/API/c/seismic.c
 		${CC} ${INCLUDES} -o $@ ${CFLAGS} shotwem.c wem.c ${SEISMIC_PATH}/src/API/c/seismic.c ${LIBS} 
@@ -21,6 +21,9 @@ compute_angles.so:compute_angles.c wem.c ${SEISMIC_PATH}/src/API/c/seismic.c
 
 shotillum.so:shotillum.c illum.c ${SEISMIC_PATH}/src/API/c/seismic.c
 		${CC} ${INCLUDES} -o $@ ${CFLAGS} shotillum.c illum.c ${SEISMIC_PATH}/src/API/c/seismic.c ${LIBS} 
+
+shotwem_suboff.so:shotwem_suboff.c wem_suboff.c ${SEISMIC_PATH}/src/API/c/seismic.c
+		${CC} ${INCLUDES} -o $@ ${CFLAGS} shotwem_suboff.c wem_suboff.c ${SEISMIC_PATH}/src/API/c/seismic.c ${LIBS} 
 
 clean:
 		-rm -f *.o *.so
