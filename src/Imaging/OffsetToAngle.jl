@@ -1,13 +1,13 @@
 function OffsetToAngle(m_h;nz=1,oz=0,dz=1,nhx=1,ohx=0,dhx=1,npx=1,opx=0,dpx=1)
 
 	nkx = 2*nhx
-	dkx = 2*pi/nkx/dhx
+	dkx = 2.0*pi/nkx/dhx
 	nf = 2*nz
-	dw = 2.*pi/nf/dz
+	dw = 2.0*pi/nf/dz
 	nw = Int(floor(nf/2)) + 1
 	m_h_pad = zeros(Float64,nf,nkx)
 	m_h_pad[1:nz,1:nhx] = m_h
-	M_h = fft(fft(m_h_pad,1),2)
+	M_h = fft(fft(m_h_pad,1),2)/sqrt(nf)/sqrt(nkx)
 	for iw = 1 : nw
 		w = (iw-1)*dw
 		for ikx = 1 : nkx
@@ -40,27 +40,27 @@ function OffsetToAngle(m_h;nz=1,oz=0,dz=1,nhx=1,ohx=0,dhx=1,npx=1,opx=0,dpx=1)
 	for iw=nw+1:nf
 		M_a[iw,:] = conj(M_a[nf-iw+2,:])
 	end 
-	m_a = ifft(M_a,1)
+	m_a = bfft(M_a,1)/sqrt(nf)
 	m_a = real(m_a[1:nz,:])
 	return m_a
 end
 
 function AngleToOffset(m_a;nz=1,oz=0,dz=1,nhx=1,ohx=0,dhx=1,npx=1,opx=0,dpx=1)
 
-	nkx = 4*nhx
-	dkx = 2*pi/nkx/dhx
-	nf = 4*nz
-	dw = 2.*pi/nf/dz
+	nkx = 2*nhx
+	dkx = 2.0*pi/nkx/dhx
+	nf = 2*nz
+	dw = 2.0*pi/nf/dz
 	nw = Int(floor(nf/2)) + 1
 	m_a_pad = zeros(Float64,nf,npx)
 	m_a_pad[1:nz,1:npx] = m_a
-	M_a = fft(m_a_pad,1)
+	M_a = fft(m_a_pad,1)/sqrt(nf)
 	M_h = zeros(Complex{Float64},nf,nkx)
 	for iw = 1 : nw
 		w = (iw-1)*dw
 		for ipx = 1 : npx
 			px = (ipx-1)*dpx + opx
-			kx = -px*w
+			kx = -px*w		
 			if (kx >= 0)
 				ikx = Int(floor(kx/dkx)) + 1
 				b = (kx/dkx - floor(kx/dkx))
@@ -83,13 +83,13 @@ function AngleToOffset(m_a;nz=1,oz=0,dz=1,nhx=1,ohx=0,dhx=1,npx=1,opx=0,dpx=1)
 			L = exp(-kx*ohx*im)
 			M_h[iw,ikx] *= conj(L)
 		end
+		M_h[iw,:] = bfft(M_h[iw,:])/sqrt(nkx)
 	end
 	# symmetries
 	for iw=nw+1:nf
 		M_h[iw,:] = conj(M_h[nf-iw+2,:])
 	end 
-
-	m_h = ifft(ifft(M_h,2),1)
+	m_h = bfft(M_h,1)/sqrt(nf)
 	m_h = real(m_h[1:nz,1:nhx])
 	return m_h
 end
@@ -103,7 +103,7 @@ function OffsetToAngle(in,h::Array{Header,1};nhx=1,ohx=0,dhx=1,npx=1,opx=0,dpx=1
 		h_out[ipx].iang = ipx
 		h_out[ipx].ang = ipx*dpx + opx
 	end	
-	
+
 	return out,h_out
 end
 
@@ -116,7 +116,7 @@ function AngleToOffset(in,h::Array{Header,1};nhx=1,ohx=0,dhx=1,npx=1,opx=0,dpx=1
 		h_out[ihx].ihx = ihx
 		h_out[ihx].hx = ihx*dhx + ohx
 	end	
-	
+
 	return out,h_out
 end
 
@@ -128,15 +128,24 @@ function OffsetToAngle(m::ASCIIString,d::ASCIIString,adj;nhx=1,ohx=0,dhx=1,npx=1
 		f_d = ParseDataName(m)
 		f_h = ParseHeaderName(m)		
 		ext = ReadTextHeader(d)
-		ext.n3 = npx; ext.o3 = opx; ext.d3 = dpx;
+		ext.n2 = npx; ext.o2 = opx; ext.d2 = dpx;
 		WriteTextHeader(m,ext,"native_float",4,f_d,f_h)
 	else
 		SeisProcess(m,d,[AngleToOffset],[parameters];key=["imx"])
 		f_d = ParseDataName(d)
 		f_h = ParseHeaderName(d)		
 		ext = ReadTextHeader(m)
-		ext.n3 = nhx; ext.o3 = ohx; ext.d3 = dhx;
+		ext.n2 = nhx; ext.o2 = ohx; ext.d2 = dhx;
 		WriteTextHeader(d,ext,"native_float",4,f_d,f_h)
 	end
 
 end
+
+function OffsetToAngle(m::Array{ASCIIString,1},d::Array{ASCIIString,1},adj;nhx=1,ohx=0,dhx=1,npx=1,opx=0,dpx=1)
+
+	for j = 1 : length(m)
+		OffsetToAngle(m[j],d[j],adj;nhx=nhx,ohx=ohx,dhx=dhx,npx=npx,opx=opx,dpx=dpx)
+	end     
+
+end
+

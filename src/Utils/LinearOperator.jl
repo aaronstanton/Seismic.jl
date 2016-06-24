@@ -53,8 +53,8 @@ end
 function LinearOperator(m::Array{ASCIIString,1},d::Array{ASCIIString,1},operators,parameters;adj=true)
 
     rand_string = string(round(Int,rand()*100000))
-    tmp_m = [join(["tmp_CG_m1_",rand_string]);join(["tmp_CG_m2_",rand_string]);join(["tmp_CG_m3_",rand_string])]
-    tmp_d = [join(["tmp_CG_d1_",rand_string]);join(["tmp_CG_d2_",rand_string]);join(["tmp_CG_d3_",rand_string])]
+    tmp_m = [join(["tmp_CG_m1_",rand_string]);join(["tmp_CG_m2_",rand_string])]
+    tmp_d = [join(["tmp_CG_d1_",rand_string]);join(["tmp_CG_d2_",rand_string])]
     if adj
         SeisCopy(d,tmp_d)
         for j = 1 : 1 : length(operators)

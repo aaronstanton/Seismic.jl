@@ -8,6 +8,7 @@ ShotProfileEWEMHessian2,
 ShotIllumination,
 ShotProfileLSWEM,
 ShotProfileLSEWEM,
+ShotProfileLSEWEM_suboff,
 WaveSep,
 ComputeAngles,
 SeisPSTM,
@@ -22,6 +23,7 @@ include("ShotProfileEWEMHessian2.jl")
 include("ShotIllumination.jl")
 include("ShotProfileLSWEM.jl")
 include("ShotProfileLSEWEM.jl")
+include("ShotProfileLSEWEM_suboff.jl")
 include("WaveSep.jl")
 include("ComputeAngles.jl")
 include("SeisPSTM.jl")

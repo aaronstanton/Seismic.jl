@@ -13,7 +13,7 @@ function CGStep(m1::ASCIIString,m2::ASCIIString;a=1.,b=1.)
 
 	tmp = join(["tmp_CGStep_",string(round(Int,rand()*100000))])
 	@compat params = Dict(:a=>a,:b=>b)
-	SeisProcess(m1,m2,tmp,[CGStep],[params];group="some",ntrace=100000)
+	SeisProcess(m1,m2,tmp,[CGStep],[params],key=["imx";"imy"])
 	SeisCopy(tmp,m1)
 	SeisRemove(tmp)
 end

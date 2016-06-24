@@ -36,12 +36,10 @@ function DotTest(m_rand::Array{ASCIIString,1},d_rand::Array{ASCIIString,1},opera
 	rand_string = string(round(Int,rand()*100000))
 	m1_adj = join(["tmp_DotTest_m1_adj_",rand_string])
 	m2_adj = join(["tmp_DotTest_m2_adj_",rand_string])
-	m3_adj = join(["tmp_DotTest_m3_adj_",rand_string])
 	d1_fwd = join(["tmp_DotTest_d1_adj_",rand_string])
 	d2_fwd = join(["tmp_DotTest_d2_adj_",rand_string])
-	d3_fwd = join(["tmp_DotTest_d3_adj_",rand_string])
-	m_adj = [m1_adj;m2_adj;m3_adj]
-	d_fwd = [d1_fwd;d2_fwd;d3_fwd]
+	m_adj = [m1_adj;m2_adj]
+	d_fwd = [d1_fwd;d2_fwd]
 	LinearOperator(m_adj,d_rand,operators,parameters,adj=true)
 	LinearOperator(m_rand,d_fwd,operators,parameters,adj=false)
 	inner1 = InnerProduct(d_rand,d_fwd)

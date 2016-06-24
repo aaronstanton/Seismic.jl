@@ -15,7 +15,7 @@ function CalculateSampling(in::ASCIIString,wd::ASCIIString;cutoff=1e-10)
 	# calculate sampling operator (1's for live traces, 0's for missing traces)
 
 	@compat parameters = Dict(:cutoff=>cutoff)
-	SeisProcess(in,wd,[CalculateSampling],[parameters];group="some",ntrace=100000)
+	SeisProcess(in,wd,[CalculateSampling],[parameters])
 		
 end
 
