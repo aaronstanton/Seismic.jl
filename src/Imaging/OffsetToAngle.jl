@@ -27,7 +27,7 @@ function OffsetToAngle(m_h;nz=1,oz=0,dz=1,nhx=1,ohx=0,dhx=1,npx=1,opx=0,dpx=1)
 				b = (kx/dkx - floor(kx/dkx))
 				a = 1.0 - b
 			else
-				ikx = nkx + Int(ceil(kx/dkx))
+				ikx = nkx - (Int(floor(abs(kx)/dkx)) + 1)
 				a = abs(kx/dkx - ceil(kx/dkx))
 				b = 1.0 - a
 			end
@@ -66,14 +66,14 @@ function AngleToOffset(m_a;nz=1,oz=0,dz=1,nhx=1,ohx=0,dhx=1,npx=1,opx=0,dpx=1)
 				b = (kx/dkx - floor(kx/dkx))
 				a = 1.0 - b
 			else
-				ikx = nkx + Int(ceil(kx/dkx))
+				ikx = nkx - (Int(floor(abs(kx)/dkx)) + 1)
 				a = abs(kx/dkx - ceil(kx/dkx))
 				b = 1.0 - a
 			end
 			if (ikx < nkx && ikx > 0)
 				M_h[iw,ikx] += a*M_a[iw,ipx]
 				M_h[iw,ikx+1] += b*M_a[iw,ipx]
-			end
+			end	
 		end
 	end
 	for iw = 1 : nw

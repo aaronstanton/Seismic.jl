@@ -2,20 +2,20 @@ function SmoothGathers(m::ASCIIString,d::ASCIIString,adj;Nsmooth=3,Nrepeat=1)
 
 	if (adj==false)
 		m1,h,ext = SeisRead(m)
-		ngather = size(m1,5)
+		ngather = size(m1,3)
 		for igather = 1 : ngather
-			A = squeeze(m1[:,1,:,1,igather],2);
+			A = m1[:,:,igather];
 			A = smooth_angles(A;Nsmooth=Nsmooth,Nrepeat=Nrepeat)
-			m1[:,1,:,1,igather] = A
+			m1[:,:,igather] = A
 		end
 		SeisWrite(d,m1,h,ext)
 	else
 		d1,h,ext = SeisRead(d)
-		ngather = size(d1,5)
+		ngather = size(d1,3)
 		for igather = 1 : ngather
-			A = squeeze(d1[:,1,:,1,igather],2);
+			A = d1[:,:,igather];
 			A = smooth_angles(A;Nsmooth=Nsmooth,Nrepeat=Nrepeat)
-			d1[:,1,:,1,igather] = A
+			d1[:,:,igather] = A
 		end
 		SeisWrite(m,d1,h,ext)
 	end
