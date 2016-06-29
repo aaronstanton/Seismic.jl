@@ -38,6 +38,7 @@ function SeisRead(filename;group="all",key=["imx","imy"],itrace=1,ntrace=10000)
 	dtype = dtype == "native_float" ? Float32 : Complex{Float32}
 	esize = ParseDataESize(filename)
 	total = convert(Int,filesize(stream_d)/esize)
+	close(stream_d)
 	@compat nhead = length(fieldnames(Header))
 	curr = zeros(length(key),1)
 	prev = 1*curr

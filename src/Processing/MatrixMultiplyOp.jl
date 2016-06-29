@@ -9,15 +9,12 @@ function MatrixMultiplyOp(in,adj;matrix=1)
 	return out
 end
 
-function MatrixMultiplyOp(in,h::Array{Header,1},param=Dict())
-
-	adj = get(param,"adj",false)
-	matrix = get(param,"matrix",eye(length(in)))
+function MatrixMultiplyOp(in,h::Array{Header,1};adj=false,matrix=1)
 	
 	if (adj)
-		out = zeros(Float32,size(matrix,2))
+		out = zeros(Float32,size(matrix,2),size(in,2))
 	else
-		out = zeros(Float32,size(matrix,1))
+		out = zeros(Float32,size(matrix,1),size(in,2))
 	end
 	for j = 1 : length(h)
 		if (adj)
@@ -31,17 +28,20 @@ function MatrixMultiplyOp(in,h::Array{Header,1},param=Dict())
 	return out,h
 end
 
-function MatrixMultiplyOp(m::ASCIIString,d::ASCIIString,param=Dict())
+function MatrixMultiplyOp(m::ASCIIString,d::ASCIIString,adj;matrix=1)
 
-	adj = get(param,"adj",false)
-	ntrace = get(param,"ntrace",100000)
-	param["f"] = [MatrixMultiply]
-	param["group"] = "some"
-	param["ntrace"] = ntrace
+	@compat parameters = Dict(:adj=>adj,:matrix=>matrix)
 	if (adj==true)
-		SeisProcess(d,m,param)
+		SeisProcess(d,m,[MatrixMultiplyOp],[parameters];key=["imx"])
+		ext = ReadTextHeader(m)
+		ext.n1 = size(matrix,2)
+		Seismic.WriteTextHeader(m,ext,"native_float",4,join([m "@data@"]),join([m "@headers@"]))
 	else
-		SeisProcess(m,d,param)
+		SeisProcess(m,d,[MatrixMultiplyOp],[parameters];key=["imx"])
+		ext = ReadTextHeader(d)
+		ext.n1 = size(matrix,1)
+		Seismic.WriteTextHeader(d,ext,"native_float",4,join([d "@data@"]),join([d "@headers@"]))
 	end
 
 end
+

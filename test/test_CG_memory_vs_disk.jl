@@ -4,20 +4,33 @@ using Base.Test
 # test of Conjugate Gradients
 nd = 1000
 nm = 300
-L = rand(nd,nm)
-m = rand(nm);
+L = randn(nd,nm)
+m = 10000*randn(nm);
 d = L*m;
 d = d + 0.2*rand(nd);
 
-m0 = zeros(nm)
-m1,cost = ConjugateGradients(m0,d,[[MatrixMultiplyOp]],[[:matrix_multiply=>0.1]],Niter=nm)
+m1,cost = ConjugateGradients(d,[MatrixMultiplyOp],[Dict(:matrix=>L)],Niter=nm,mu=0.2)
+ext = Seismic.Extent(size(d,1),size(d,2),1,1,1,
+0,0,0,1,1,
+1,1,1,1,1,
+"","","","","",
+"","","","","",
+"")
+h = Header[]
+for ix = 1:size(d,2)
+		push!(h,Seismic.InitSeisHeader())
+		h[ix] = Seismic.InitSeisHeader();
+		h[ix].tracenum = ix;
+		h[ix].n1 = size(d,1);
+		h[ix].d1 = 1;
+end
 
-SeisWrite("d",d)
+println(size(d))
 
-SeisWrite("m0",0.*m)
+SeisWrite("tmp_d.seis",d,h,ext)
 
-ConjugateGradients("m2","m0","d","misfit.txt",param)
-m2,h = SeisRead("m2")
+ConjugateGradients("tmp_m.seis","tmp_d.seis",[MatrixMultiplyOp],[Dict(:matrix=>L)],"tmp_cost.txt",Niter=nm,mu=0.2)
+m2,ext = SeisRead("tmp_m.seis")
 
 # test that quality factor between disk and memory based CG 
 # is greater than 50 Decibels
