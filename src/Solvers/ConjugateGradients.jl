@@ -115,15 +115,18 @@ function ConjugateGradients(m::Array{ASCIIString,1},d::Array{ASCIIString,1},oper
 	CGStep(m,s,a=[0.;0.],b=[0.;0.])
 	norm_s0 = sqrt(InnerProduct(s,s))
 	gamma = norm_s0^2
+println("gamma=",gamma)	
 	norm_m = 0.0
 	m_max = norm_m;
 	for iter = 1 : Niter	
 		LinearOperator(p,q,operators,parameters,adj=false)
 		delta = InnerProduct(q,q) + mu[1]*InnerProduct(p[1],p[1]) + mu[2]*InnerProduct(p[2],p[2])
+println("delta=",delta)	
 		if delta <= 0 
 			error("delta <= 0")
 		end
 		alpha = gamma / delta
+println("alpha=",alpha)	
 		CGStep(m,p,a=[1.0;1.0],b=[alpha;alpha])  
 		CGStep(r,q,a=[1.0;1.0],b=[-alpha;-alpha]) 
 		LinearOperator(s,r,operators,parameters,adj=true)
@@ -131,10 +134,14 @@ function ConjugateGradients(m::Array{ASCIIString,1},d::Array{ASCIIString,1},oper
 		norm_s = sqrt(InnerProduct(s,s))
 		gamma1 = gamma
 		gamma = norm_s^2
+println("gamma=",gamma)	
 		beta = gamma / gamma1
+println("beta=",beta)	
 		CGStep(p,s,a=[beta;beta],b=[1.0;1.0])
 		norm_m = sqrt(InnerProduct(m,m))
+println("norm_m=",norm_m)	
 		m_max = max(m_max,norm_m)
+println("m_max=",m_max)	
 		push!(cost,norm_s / norm_s0)
 		fp = open(cost_file,"a")
 		write(fp,join([string(cost[iter]),"\n"]))

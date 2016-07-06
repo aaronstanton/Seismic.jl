@@ -134,15 +134,11 @@ type Shot_suboff
 	vel
 	wav
 	sx
-	sy
 	sz
 	gz
 	nhx
-	nhy
 	dhx
-	dhy
 	ohx
-	ohy
 	fmin
 	fmax
 	padt
