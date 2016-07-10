@@ -271,7 +271,8 @@ void SeisRead(char *in,float **d,struct SeisHeader *h, struct SeisFileHeader *fh
 {
 	int ix,nx;
 	FILE *fp_d,*fp_h;
-	size_t s=NULL;
+	//size_t s=NULL;
+	size_t s;
 	InitFileHeader(fh);
 	ReadFileHeader(in,fh);
 	nx = fh->n2*fh->n3*fh->n4*fh->n5;

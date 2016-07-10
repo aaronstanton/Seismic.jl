@@ -286,8 +286,11 @@ void ewem_suboff(float **ux, float **uz,
 	free1float(po_s);
 	free2float(pd_s);
 	free2float(vpref);
+	free2float(vsref);
 	free2int(ipref1);
 	free2int(ipref2);
+	free2int(isref1);
+	free2int(isref2);
 	free2float(mpp_threads);
 	free2float(mps_threads);
 	return;

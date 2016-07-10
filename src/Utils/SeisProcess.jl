@@ -106,7 +106,7 @@ function SeisProcess(in1::ASCIIString,in2::ASCIIString,out::ASCIIString,operator
 	itrace_out = 1
 	for igather = 1 : length(L)
 		d1,h1,e1 = SeisRead(in1,group="some",itrace=itrace_in,ntrace=L[igather])
-		d2,h2,e2 = SeisRead(in2,group="some",itrace=itrace_in,ntrace=L[igather])
+		d2,h2,e2 = SeisRead(in2,group="some",itrace=itrace_in,ntrace=L[igather])		
 		num_traces_in = size(d1,2)
 		for j = 1 : length(operators)
 			op = operators[j]

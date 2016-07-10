@@ -11,11 +11,14 @@ end
 function CGStep(m1::ASCIIString,m2::ASCIIString;a=1.,b=1.)
 	# m1 = a*m1 + b*m2	
 
-	tmp = join(["tmp_CGStep_",string(round(Int,rand()*100000))])
-	@compat params = Dict(:a=>a,:b=>b)
-	SeisProcess(m1,m2,tmp,[CGStep],[params],key=["imx";"imy"])
-	SeisCopy(tmp,m1)
-	SeisRemove(tmp)
+	#tmp = join(["tmp_CGStep_",string(round(Int,rand()*100000))])
+	#@compat params = Dict(:a=>a,:b=>b)
+	#SeisProcess(m1,m2,tmp,[CGStep],[params],key=["imx";"imy"])
+	#SeisCopy(tmp,m1)
+	#SeisRemove(tmp)
+	d1,h,ext = SeisRead(m1)
+	d2,h,ext = SeisRead(m2)
+	SeisWrite(m1,a*d1[:,:] + b*d2[:,:],h,ext)
 end
 
 function CGStep(m1::Array{ASCIIString,1},m2::Array{ASCIIString,1};a=[1. 1. 1.],b=[1. 1. 1.])

@@ -132,6 +132,8 @@ int main (int argc, char *argv[])
 		for (ix=0;ix<nx*ny;ix++) h_ux[ix].n1 = nt;
 		for (ix=0;ix<nx*ny;ix++) h_ux[ix].d1 = dt;
 		for (ix=0;ix<nx*ny;ix++) h_ux[ix].o1 = ot;
+		for (ix=0;ix<nx*ny;ix++) h_ux[ix].sx = sx;
+		for (ix=0;ix<nx*ny;ix++) h_ux[ix].sy = sy;
 		for (ix=0;ix<nx*ny;ix++) h_ux[ix].gx = h_mpp[ix].mx;
 		for (ix=0;ix<nx*ny;ix++) h_ux[ix].gy = h_mpp[ix].my;
 		for (ix=0;ix<nx*ny;ix++) h_ux[ix].hx = h_mpp[ix].mx - sx;
@@ -143,6 +145,8 @@ int main (int argc, char *argv[])
 		for (ix=0;ix<nx*ny;ix++) h_uy[ix].n1 = nt;
 		for (ix=0;ix<nx*ny;ix++) h_uy[ix].d1 = dt;
 		for (ix=0;ix<nx*ny;ix++) h_uy[ix].o1 = ot;
+		for (ix=0;ix<nx*ny;ix++) h_uy[ix].sx = sx;
+		for (ix=0;ix<nx*ny;ix++) h_uy[ix].sy = sy;
 		for (ix=0;ix<nx*ny;ix++) h_uy[ix].gx = h_mpp[ix].mx;
 		for (ix=0;ix<nx*ny;ix++) h_uy[ix].gy = h_mpp[ix].my;
 		for (ix=0;ix<nx*ny;ix++) h_uy[ix].hx = h_mpp[ix].mx - sx;
@@ -154,6 +158,8 @@ int main (int argc, char *argv[])
 		for (ix=0;ix<nx*ny;ix++) h_uz[ix].n1 = nt;
 		for (ix=0;ix<nx*ny;ix++) h_uz[ix].d1 = dt;
 		for (ix=0;ix<nx*ny;ix++) h_uz[ix].o1 = ot;
+		for (ix=0;ix<nx*ny;ix++) h_uz[ix].sx = sx;
+		for (ix=0;ix<nx*ny;ix++) h_uz[ix].sy = sy;
 		for (ix=0;ix<nx*ny;ix++) h_uz[ix].gx = h_mpp[ix].mx;
 		for (ix=0;ix<nx*ny;ix++) h_uz[ix].gy = h_mpp[ix].my;
 		for (ix=0;ix<nx*ny;ix++) h_uz[ix].hx = h_mpp[ix].mx - sx;

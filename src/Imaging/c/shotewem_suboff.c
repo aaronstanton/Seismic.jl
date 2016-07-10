@@ -124,6 +124,7 @@ int main (int argc, char *argv[])
 		for (ix=0;ix<nx;ix++) h_ux[ix].n1 = nt;
 		for (ix=0;ix<nx;ix++) h_ux[ix].d1 = dt;
 		for (ix=0;ix<nx;ix++) h_ux[ix].o1 = ot;
+		for (ix=0;ix<nx;ix++) h_ux[ix].sx = sx;
 		for (ix=0;ix<nx;ix++) h_ux[ix].gx = h_mpp[ix].mx;
 		for (ix=0;ix<nx;ix++) h_ux[ix].hx = h_mpp[ix].mx - sx;
 		h_uz = allocSeisHeader(nx);
@@ -133,6 +134,7 @@ int main (int argc, char *argv[])
 		for (ix=0;ix<nx;ix++) h_uz[ix].n1 = nt;
 		for (ix=0;ix<nx;ix++) h_uz[ix].d1 = dt;
 		for (ix=0;ix<nx;ix++) h_uz[ix].o1 = ot;
+		for (ix=0;ix<nx;ix++) h_uz[ix].sx = sx;
 		for (ix=0;ix<nx;ix++) h_uz[ix].gx = h_mpp[ix].mx;
 		for (ix=0;ix<nx;ix++) h_uz[ix].hx = h_mpp[ix].mx - sx;
 	}

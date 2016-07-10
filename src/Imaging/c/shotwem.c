@@ -93,6 +93,8 @@ int main (int argc, char *argv[])
 		for (ix=0;ix<nx*ny;ix++) h_d[ix].n1 = nt;
 		for (ix=0;ix<nx*ny;ix++) h_d[ix].d1 = dt;
 		for (ix=0;ix<nx*ny;ix++) h_d[ix].o1 = ot;
+		for (ix=0;ix<nx*ny;ix++) h_d[ix].sx = sx;
+		for (ix=0;ix<nx*ny;ix++) h_d[ix].sy = sy;
 		for (ix=0;ix<nx*ny;ix++) h_d[ix].gx = h_m[ix].mx;
 		for (ix=0;ix<nx*ny;ix++) h_d[ix].gy = h_m[ix].my;
 		for (ix=0;ix<nx*ny;ix++) h_d[ix].hx = h_m[ix].mx - sx;

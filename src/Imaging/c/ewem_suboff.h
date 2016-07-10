@@ -1,5 +1,5 @@
-#ifndef _wem_suboff_h_
-#define _wem_suboff_h_
+#ifndef _ewem_suboff_h_
+#define _ewem_suboff_h_
 void ewem_suboff(float **ux, float **uz,
 		float **mpp, float **mps2,
 		float **wav,

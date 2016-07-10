@@ -1,4 +1,5 @@
 export ConjugateGradients,
+ConjugateGradients2,
 IRLS,
 DotTest,
 CGStep,
