@@ -4,19 +4,16 @@ using Base.Test
 # test of Conjugate Gradients
 nd = 100
 nm = 300
-L = 1.0*randn(nd,nm)
-m = 0.1*rand(nm)
+L = 10*randn(nd,nm)
+m = 10.0*rand(nm)
 d = zeros(nd)
 d = L*m
-d = d + 2.0*rand(nd)
+d = d + 2.0*randn(nd)
 
 println(norm(d))
 println(norm(m))
 
-m1,cost1 = ConjugateGradients(d,[MatrixMultiplyOp],[Dict(:matrix=>L)],Niter=10,mu=0.0)
-
-m1b,cost2 = ConjugateGradients2(d,[MatrixMultiplyOp],[Dict(:matrix=>L)],Niter=10,mu=0.0)
-
+m1,cost = ConjugateGradients(d,[MatrixMultiplyOp],[Dict(:matrix=>L)],Niter=20,mu=0.2)
 
 ext = Seismic.Extent(size(d,1),size(d,2),1,1,1,
 0,0,0,1,1,
@@ -35,7 +32,7 @@ end
 
 SeisWrite("tmp_d.seis",d,h,ext)
 
-ConjugateGradients("tmp_m.seis","tmp_d.seis",[MatrixMultiplyOp],[Dict(:matrix=>L)],"tmp_cost.txt",Niter=10,mu=0.0)
+ConjugateGradients("tmp_m.seis","tmp_d.seis",[MatrixMultiplyOp],[Dict(:matrix=>L)],"tmp_cost.txt",Niter=20,mu=0.2)
 m2,ext = SeisRead("tmp_m.seis")
 
 # test that quality factor between disk and memory based CG 
