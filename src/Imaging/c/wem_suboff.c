@@ -243,6 +243,7 @@ void extrap1f(float **mpp,
 	complex *up_xg;
 	complex *up_xs;
 	complex **smig;
+	fftwf_complex *a,*b;
 
 	ithread = omp_get_thread_num(); 
 	//fprintf(stderr,"ithread=%d\n",ithread);
@@ -250,6 +251,10 @@ void extrap1f(float **mpp,
 	up_xg = alloc1complex(nmx);
 	up_xs = alloc1complex(nmx);
 	smig = alloc2complex(nz,nmx);
+
+	a  = fftwf_malloc(sizeof(fftwf_complex) * nkx);
+	b  = fftwf_malloc(sizeof(fftwf_complex) * nkx);
+
 
 	for (ix=0;ix<nmx;ix++) up_xg[ix] = 0.;
 	for (ix=0;ix<nmx;ix++) up_xs[ix] = 0.;
@@ -265,8 +270,8 @@ void extrap1f(float **mpp,
 	for (iz=0;iz<nz;iz++){ // extrapolate source wavefield 
 		z = oz + dz*iz;
 		if (z >= sz){
-			if (pspi) pspiop(up_xs,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,true,true,verbose,kz_eps);
-			else 	  ssop(up_xs,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,p1,p2,true,true,verbose,kz_eps);
+			if (pspi) pspiop(up_xs,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,a,b,true,true,verbose,kz_eps);
+			else 	  ssop(up_xs,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,p1,p2,a,b,true,true,verbose,kz_eps);
 			for (ix=0;ix<nmx;ix++) smig[ix][iz]  = up_xs[ix]/max_source;
 		}
 		else{
@@ -278,10 +283,10 @@ void extrap1f(float **mpp,
 			z = oz + dz*iz;
 			if (z >= gz){
 				if (pspi){ 
-					pspiop(up_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,true,false,verbose,kz_eps);
+					pspiop(up_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,a,b,true,false,verbose,kz_eps);
 				}
 				else{
-					ssop(up_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,p1,p2,true,false,verbose,kz_eps);
+					ssop(up_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,p1,p2,a,b,true,false,verbose,kz_eps);
 				}
 				for (imx=0;imx<nmx;imx++){ 
           				for (ihx=0;ihx<nhx;ihx++){
@@ -315,10 +320,10 @@ void extrap1f(float **mpp,
           				}
 				}
 				if (pspi){ 
-					pspiop(up_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,false,false,verbose,kz_eps);
+					pspiop(up_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,a,b,false,false,verbose,kz_eps);
 				}
 				else{
-					ssop(up_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,p1,p2,false,false,verbose,kz_eps);
+					ssop(up_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,p1,p2,a,b,false,false,verbose,kz_eps);
 				}
 			}
 		}
@@ -330,6 +335,8 @@ void extrap1f(float **mpp,
 	free1complex(up_xg);
 	free1complex(up_xs);
 	free2complex(smig);
+	fftwf_free(a);
+	fftwf_free(b);
 
 	return;
 }
@@ -338,6 +345,7 @@ void ssop(complex *d_x,
 		float w,float dkx,int nkx,int nmx,float omx,float dmx,float dz,int iz,
 		float **v,float *po,float **pd,
 		fftwf_plan p1,fftwf_plan p2,
+		fftwf_complex *a, fftwf_complex *b,
 		bool adj, 
 		bool src,
 		bool verbose,
@@ -347,14 +355,11 @@ void ssop(complex *d_x,
 	complex L;
 	int ik,ikx,imx; 
 	complex *d_k;
-	fftwf_complex *a,*b;
 	complex w2,s;	
 
 	int lmx;
 	if (nmx>100) lmx=30;
 	else lmx=0;
-	a  = fftwf_malloc(sizeof(fftwf_complex) * nkx);
-	b  = fftwf_malloc(sizeof(fftwf_complex) * nkx);
 	d_k = alloc1complex(nkx);
 	w2 = kz_eps + w*I;
 	w2 *= w2;
@@ -411,8 +416,6 @@ void ssop(complex *d_x,
 		}
 	}
 	free1complex(d_k);
-	fftwf_free(a);
-	fftwf_free(b);
 
 	return;
 }
@@ -424,6 +427,7 @@ void pspiop(complex *d_x,
 		float **vel,float *po,float **pd,
 		float **vref, int **iref1, int **iref2, int nref,
 		fftwf_plan p1,fftwf_plan p2,
+		fftwf_complex *a, fftwf_complex *b,
 		bool adj, 
 		bool src,
 		bool verbose,
@@ -435,7 +439,6 @@ void pspiop(complex *d_x,
 	complex L;
 	int ik,ikx,imx,ix; 
 	complex *d_k;
-	fftwf_complex *a,*b;
 	int lmx;
 	complex **dref;
 	complex w2,s;	
@@ -443,8 +446,6 @@ void pspiop(complex *d_x,
 	float v,vref1,vref2,aa,pd_ref;
 	if (nmx>100) lmx=30;
 	else lmx=0;
-	a  = fftwf_malloc(sizeof(fftwf_complex) * nkx);
-	b  = fftwf_malloc(sizeof(fftwf_complex) * nkx);
 	dref = alloc2complex(nref,nmx);
 	d_k = alloc1complex(nkx);
 
@@ -530,8 +531,6 @@ void pspiop(complex *d_x,
 		}
 	}
 	free1complex(d_k);
-	fftwf_free(a);
-	fftwf_free(b);
 	free2complex(dref);
 
 	return;
