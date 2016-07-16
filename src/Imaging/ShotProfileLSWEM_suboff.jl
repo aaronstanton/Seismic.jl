@@ -23,10 +23,8 @@ function ShotProfileLSWEM_suboff(m::ASCIIString,d::ASCIIString;Niter=10,mu=0.,co
 			operators = [WeightingOp ;  ShotProfileWEM_suboff ; OffsetToAngle ; WeightingOp]
 			parameters = [param_wd ; param_mig ; param_ang ; param_wm]
 		else
-			#operators = [WeightingOp ;  ShotProfileWEM_suboff ; OffsetToAngle]
-			#parameters = [param_wd ; param_mig ; param_ang]
-			operators = [ShotProfileWEM_suboff]
-			parameters = [param_mig]
+			operators = [WeightingOp ;  ShotProfileWEM_suboff ; OffsetToAngle]
+			parameters = [param_wd ; param_mig ; param_ang]
 		end	
 	end
 	ConjugateGradients(m,d,operators,parameters,cost,Niter=Niter,mu=mu)

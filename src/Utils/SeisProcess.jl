@@ -21,13 +21,11 @@ function SeisProcess(in::ASCIIString,out::ASCIIString,operators,parameters;key=[
 	end
 	prev = 1*curr
 	L = []
-	#println("nx=",nx)
 	for j = 1 : nx
 		h1 = GrabHeader(stream_h,j)
 		for ikey = 1 : length(key)
 			curr[ikey] = getfield(h1,symbol(key[ikey]))
 		end
-		#println("prev=",prev,"curr=",curr,"j=",j,"itrace=",itrace)
 		if curr != prev
 			push!(L,j - itrace)
 			itrace = j
@@ -36,7 +34,7 @@ function SeisProcess(in::ASCIIString,out::ASCIIString,operators,parameters;key=[
 	end	
 	push!(L,nx - itrace + 1)
 	close(stream_h)
-	
+			
 	itrace_in = 1
 	itrace_out = 1
 	for igather = 1 : length(L)
@@ -48,7 +46,7 @@ function SeisProcess(in::ASCIIString,out::ASCIIString,operators,parameters;key=[
 			d1 = copy(d2)
 			h1 = copy(h2)
 		end
-		num_traces_out = size(d1,2)	
+		num_traces_out = size(d1,2)
 		SeisWrite(out,d1,h1,e1,itrace=itrace_out)
 		itrace_in += num_traces_in
 		itrace_out += num_traces_out
@@ -92,7 +90,6 @@ function SeisProcess(in1::ASCIIString,in2::ASCIIString,out::ASCIIString,operator
 		for ikey = 1 : length(key)
 			curr[ikey] = getfield(h1,symbol(key[ikey]))
 		end
-		#println("prev=",prev,"curr=",curr,"j=",j,"itrace=",itrace)
 		if curr != prev
 			push!(L,j - itrace)
 			itrace = j
