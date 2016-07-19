@@ -7,8 +7,9 @@ function ConjugateGradients(d,operators,parameters;Niter=10,mu=0,tol=1.0e-15)
 	g = LinearOperator(r,operators,parameters,adj=true)
 	m = zeros(g)
 	s = copy(g)
-	gamma_old = InnerProduct(g,g)
-	gamma0 = gamma_old
+	gamma = InnerProduct(g,g)
+	gamma00 = gamma
+    cost0 = InnerProduct(r,r)
 	push!(cost,1.0)
 	for iter = 1 : Niter
 		t = LinearOperator(s,operators,parameters,adj=false)
@@ -17,17 +18,18 @@ function ConjugateGradients(d,operators,parameters;Niter=10,mu=0,tol=1.0e-15)
 			println("delta reached tolerance, ending at iteration ",iter)
 			break;
 		end		
-		alpha = gamma_old/delta
+		alpha = gamma/delta
 		m = m + alpha*s
 		r = r - alpha*t
 		g = LinearOperator(r,operators,parameters,adj=true)
 		g = g - mu*m
+		gamma0 = copy(gamma)
 		gamma = InnerProduct(g,g)
-		push!(cost,sqrt(gamma/gamma0))
-		beta = gamma/gamma_old
-		gamma_old = copy(gamma)
+        cost1 = InnerProduct(r,r) + mu*InnerProduct(m,m)
+        push!(cost,cost1/cost0)
+		beta = gamma/gamma0
 		s = beta*s + g
-		if (sqrt(gamma) <= sqrt(gamma0) * tol)
+		if (sqrt(gamma) <= sqrt(gamma00) * tol)
 			println("tolerance reached, ending at iteration ",iter)
 			break;
 		end
@@ -54,8 +56,9 @@ function ConjugateGradients(m::ASCIIString,d::ASCIIString,operators,parameters,c
 	SeisCopy(g,s)
 	SeisCopy(g,m)
 	CGStep(m,g,a=0.0,b=0.0)
-	gamma_old = InnerProduct(g,g)
-	gamma0 = gamma_old
+	gamma = InnerProduct(g,g)
+	gamma00 = gamma
+    cost0 = InnerProduct(r,r)
 	push!(cost,1.0)
 	fp = open(cost_file,"a")
 	write(fp,join([string(cost[1]),"\n"]))
@@ -63,28 +66,29 @@ function ConjugateGradients(m::ASCIIString,d::ASCIIString,operators,parameters,c
 	for iter = 1 : Niter	
 		LinearOperator(s,t,operators,parameters,adj=false)
 		delta = InnerProduct(t,t) + mu*InnerProduct(s,s)		
-		alpha = 0.5*gamma_old/delta
+		alpha = gamma/delta
 		CGStep(m,s,a=1.0,b=alpha)  
 		CGStep(r,t,a=1.0,b=-alpha)
 		LinearOperator(g,r,operators,parameters,adj=true)
 		CGStep(g,m,a=1.0,b=-mu)
+		gamma0 = copy(gamma)
 		gamma = InnerProduct(g,g)
-		push!(cost,sqrt(gamma/gamma0))
+        cost1 = InnerProduct(r,r) + mu*InnerProduct(m,m)
+        push!(cost,cost1/cost0)
 		fp = open(cost_file,"a")
 		write(fp,join([string(cost[iter+1]),"\n"]))
 		close(fp)
-		beta = gamma/gamma_old
-		gamma_old = copy(gamma)
+		beta = gamma/gamma0
 		CGStep(s,g,a=beta,b=1.0)
-		if (sqrt(gamma) <= sqrt(gamma0) * tol)
+		if (sqrt(gamma) <= sqrt(gamma00) * tol)
 			println("tolerance reached, ending at iteration ",iter)
 			break;
 		end
 	end
-	SeisRemove(g);
-	SeisRemove(s);
-	SeisRemove(r);
-	SeisRemove(t);
+	SeisRemove(g)
+	SeisRemove(s)
+	SeisRemove(r)
+	SeisRemove(t)
 	
 end
 
@@ -106,8 +110,9 @@ function ConjugateGradients(m::Array{ASCIIString,1},d::Array{ASCIIString,1},oper
 	SeisCopy(g,s)
 	SeisCopy(g,m)
 	CGStep(m,g,a=[0.0;0.0],b=[0.0;0.0])
-	gamma_old = InnerProduct(g,g)
-	gamma0 = gamma_old
+	gamma = InnerProduct(g,g)
+	gamma00 = gamma
+    cost0 = InnerProduct(r,r)
 	push!(cost,1.0)
 	fp = open(cost_file,"a")
 	write(fp,join([string(cost[1]),"\n"]))
@@ -115,20 +120,21 @@ function ConjugateGradients(m::Array{ASCIIString,1},d::Array{ASCIIString,1},oper
 	for iter = 1 : Niter	
 		LinearOperator(s,t,operators,parameters,adj=false)
 		delta = InnerProduct(t,t) + mu[1]*InnerProduct(s[1],s[1]) + mu[2]*InnerProduct(s[2],s[2])	
-		alpha = 0.5*gamma_old/delta
+		alpha = gamma/delta
 		CGStep(m,s,a=[1.0;1.0],b=[alpha;alpha]) 
 		CGStep(r,t,a=[1.0;1.0],b=[-alpha;-alpha])
 		LinearOperator(g,r,operators,parameters,adj=true)
 		CGStep(g,m,a=[1.0;1.0],b=[-mu[1];-mu[2]])
+		gamma0 = copy(gamma)
 		gamma = InnerProduct(g,g)
-		push!(cost,sqrt(gamma/gamma0))
+        cost1 = InnerProduct(r,r) + mu[1]*InnerProduct(m[1],m[1]) + mu[2]*InnerProduct(m[2],m[2])
+        push!(cost,cost1/cost0)
 		fp = open(cost_file,"a")
 		write(fp,join([string(cost[iter+1]),"\n"]))
 		close(fp)
-		beta = gamma/gamma_old
-		gamma_old = copy(gamma)
+		beta = gamma/gamma0
 		CGStep(s,g,a=[beta;beta],b=[1.0;1.0])
-		if (sqrt(gamma) <= sqrt(gamma0) * tol)
+		if (sqrt(gamma) <= sqrt(gamma00) * tol)
 			println("tolerance reached, ending at iteration ",iter)
 			break;
 		end
