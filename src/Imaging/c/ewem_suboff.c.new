@@ -754,7 +754,8 @@ void elastic_separate_2d(complex *ux, complex *uz,
 	us_k = alloc1complex(nkx);
 	a  = fftwf_malloc(sizeof(fftwf_complex) * nkx);
 	b  = fftwf_malloc(sizeof(fftwf_complex) * nkx);
-	if (sep){ /* separation of wavefield components to wavefield potentials */
+	if (sep){ /* decomposition of wavefield components to wavefield potentials */
+	  if (!adj){ /* true decomposition operator */
 		// x-component
 		for(imx=0;imx<nkx;imx++){ 
 			a[imx] = (imx < nmx) ? ux[imx] : 0.;
@@ -778,20 +779,14 @@ void elastic_separate_2d(complex *ux, complex *uz,
 			bb = sqrtf(bb2);
 			cc = bb*sqrtf(kzs*kzs + bb2);
 			dd2 = bb2 + kzp*kzs;
-			if (bb >= 0.000000001 && w >= 10.){
-				if (!adj){	
-				  up_k[ikx] =(           kx*aa*ux_k[ikx]  + kzs*aa*uz_k[ikx])/dd2;  
-				  us_k[ikx] =((-kx*kzp*cc/bb2)*ux_k[ikx]  +     cc*uz_k[ikx])/dd2;
-				}
-				else{
-				  up_k[ikx] =     (kx/aa)*ux_k[ikx] + (kzp/aa)*uz_k[ikx];  
-				  us_k[ikx] =(-kx*kzs/cc)*ux_k[ikx] + (bb2/cc)*uz_k[ikx];
-				}	  
-			}
-			else{
+			//if (bb >= 0.001 && w >= 10.){
+			//	up_k[ikx] =(           kx*aa*ux_k[ikx]  + kzs*aa*uz_k[ikx])/dd2;  
+			//	us_k[ikx] =((-kx*kzp*cc/bb2)*ux_k[ikx]  +     cc*uz_k[ikx])/dd2;
+			//}
+			//else{
 				up_k[ikx] = uz_k[ikx];  
 				us_k[ikx] = ux_k[ikx];
-			}
+			//}
 		}
 		for (ik=0;ik<nkx;ik++) b[ik] = up_k[ik];
 		fftwf_execute_dft(p2,b,b);
@@ -803,8 +798,54 @@ void elastic_separate_2d(complex *ux, complex *uz,
 		for(imx=0; imx<nkx;imx++){ 
 			if (imx < nmx) us[imx] = b[imx]/sqrtf(nkx);
 		}      
+	  }	
+	  else{ /* adjoint of the composition operator */
+		// x-component
+		for(imx=0;imx<nkx;imx++){ 
+			a[imx] = (imx < nmx) ? ux[imx] : 0.;
+		}
+		fftwf_execute_dft(p1,a,a);
+		for(ik=0;ik<nkx;ik++) ux_k[ik] = a[ik]/sqrtf(nkx);
+		// z-component
+		for(imx=0;imx<nkx;imx++){ 
+			a[imx] = (imx < nmx) ? uz[imx] : 0.;
+		}
+		fftwf_execute_dft(p1,a,a);
+		for(ik=0;ik<nkx;ik++) uz_k[ik] = a[ik]/sqrtf(nkx); 
+		for (ikx=0;ikx<nkx;ikx++){
+			kx = ikx<nkx/2. ? dkx*ikx : -(dkx*nkx - dkx*ikx);
+			sp = w*w/(vp*vp) - kx*kx;
+			kzp = sp > 0. ? sqrtf(sp) : 0.;
+			ss = w*w/(vs*vs) - kx*kx;
+			kzs = ss > 0. ? sqrtf(ss) : 0.;
+			bb2 = kx*kx;
+			aa = sqrtf(bb2 + kzp*kzp);
+			bb = sqrtf(bb2);
+			cc = bb*sqrtf(kzs*kzs + bb2);
+			dd2 = bb2 + kzp*kzs;
+			//if (bb >= 0.001 && w >= 10.){
+			//	up_k[ikx] =     (kx/aa)*ux_k[ikx] + (kzp/aa)*uz_k[ikx];  
+			//	us_k[ikx] =(-kx*kzs/cc)*ux_k[ikx] + (bb2/cc)*uz_k[ikx];
+			//}
+			//else{
+				up_k[ikx] = uz_k[ikx];  
+				us_k[ikx] = ux_k[ikx];
+			//}
+		}
+		for (ik=0;ik<nkx;ik++) b[ik] = up_k[ik];
+		fftwf_execute_dft(p2,b,b);
+		for(imx=0; imx<nkx;imx++){ 
+			if (imx < nmx) up[imx] = b[imx]/sqrtf(nkx);
+		}      
+		for (ik=0;ik<nkx;ik++) b[ik] = us_k[ik];
+		fftwf_execute_dft(p2,b,b);
+		for(imx=0; imx<nkx;imx++){ 
+			if (imx < nmx) us[imx] = b[imx]/sqrtf(nkx);
+		}      
+	  }	
 	}
-	else { /* combination of wavefield potentials to wavefield components */
+	else { /* composition of wavefield components from potentials */
+	  if (!adj){ /* true composition operator */
 		// p-component
 		for(imx=0;imx<nkx;imx++){ 
 			a[imx] = (imx < nmx) ? up[imx] : 0.;
@@ -827,20 +868,14 @@ void elastic_separate_2d(complex *ux, complex *uz,
 			bb = sqrtf(bb2);
 			cc = bb*sqrtf(kzs*kzs + bb2);
 			dd2 = bb2 + kzp*kzs;
-			if (bb >= 0.000000001 && w >= 10.){
-				if (!adj){	
-				  ux_k[ikx] = (kx/aa)*up_k[ikx] - (kx*kzs/cc)*us_k[ikx];  
-				  uz_k[ikx] =(kzp/aa)*up_k[ikx] +    (bb2/cc)*us_k[ikx];
-				}
-				else{
-				  ux_k[ikx] = (kx*aa*up_k[ikx]  - (kx*kzp*cc/bb2)*us_k[ikx])/dd2;  
-				  uz_k[ikx] =(kzs*aa*up_k[ikx]  +              cc*us_k[ikx])/dd2;
-				}	  
-			}
-			else{
+			//if (bb >= 0.001 && w >= 10.){
+			//	ux_k[ikx] = (kx/aa)*up_k[ikx] - (kx*kzs/cc)*us_k[ikx];  
+			//	uz_k[ikx] =(kzp/aa)*up_k[ikx] +    (bb2/cc)*us_k[ikx];
+			//}
+			//else{
 				ux_k[ikx] = us_k[ikx];
 				uz_k[ikx] = up_k[ikx];  
-			}
+			//}
 		}
 		for (ik=0;ik<nkx;ik++) b[ik] = ux_k[ik];
 		fftwf_execute_dft(p2,b,b);
@@ -851,7 +886,51 @@ void elastic_separate_2d(complex *ux, complex *uz,
 		fftwf_execute_dft(p2,b,b);
 		for(imx=0; imx<nkx;imx++){ 
 			if (imx < nmx) uz[imx] = b[imx]/sqrtf(nkx);
-		}   
+		}      
+	  }	
+	  else{ /* adjoint of decomposition operator */
+		// p-component
+		for(imx=0;imx<nkx;imx++){ 
+			a[imx] = (imx < nmx) ? up[imx] : 0.;
+		}
+		fftwf_execute_dft(p1,a,a);
+		for(ik=0;ik<nkx;ik++) up_k[ik] = a[ik]/sqrtf(nkx);
+		for(imx=0;imx<nkx;imx++){ 
+			a[imx] = (imx < nmx) ? us[imx] : 0.;
+		}
+		fftwf_execute_dft(p1,a,a);
+		for(ik=0;ik<nkx;ik++) us_k[ik] = a[ik]/sqrtf(nkx); 
+		for (ikx=0;ikx<nkx;ikx++){
+			kx = ikx<nkx/2. ? dkx*ikx : -(dkx*nkx - dkx*ikx);
+			sp = w*w/(vp*vp) - kx*kx;
+			kzp = sp > 0. ? sqrtf(sp) : 0.;
+			ss = w*w/(vs*vs) - kx*kx;
+			kzs = ss > 0. ? sqrtf(ss) : 0.;
+			bb2 = kx*kx;
+			aa = sqrtf(bb2 + kzp*kzp);
+			bb = sqrtf(bb2);
+			cc = bb*sqrtf(kzs*kzs + bb2);
+			dd2 = bb2 + kzp*kzs;
+			//if (bb >= 0.001 && w >= 10.){
+			//	ux_k[ikx] = (kx*aa*up_k[ikx]  - (kx*kzp*cc/bb2)*us_k[ikx])/dd2;  
+			//	uz_k[ikx] =(kzs*aa*up_k[ikx]  +              cc*us_k[ikx])/dd2;
+			//}
+			//else{
+				ux_k[ikx] = us_k[ikx];
+				uz_k[ikx] = up_k[ikx];  
+			//}
+		}
+		for (ik=0;ik<nkx;ik++) b[ik] = ux_k[ik];
+		fftwf_execute_dft(p2,b,b);
+		for(imx=0; imx<nkx;imx++){ 
+			if (imx < nmx) ux[imx] = b[imx]/sqrtf(nkx);
+		}      
+		for (ik=0;ik<nkx;ik++) b[ik] = uz_k[ik];
+		fftwf_execute_dft(p2,b,b);
+		for(imx=0; imx<nkx;imx++){ 
+			if (imx < nmx) uz[imx] = b[imx]/sqrtf(nkx);
+		}      
+	  }	
 	}
 
 	fftwf_free(a);
