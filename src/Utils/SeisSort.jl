@@ -61,9 +61,6 @@ function SeisSort(in, out;key=["imx","imy"],rev=false,ntrace=100000)
     filename_d_out = join([DATAPATH out "@data@"])
     filename_h_out = join([DATAPATH out "@headers@"])    
     nhead = length(fieldnames(Header))
-    stream_h = open(filename_h_out)
-    nx = Int(floor(filesize(stream_h)/(nhead*4)))
-    close(stream_h)
     extent = ReadTextHeader(in)
     extent.n2 = nx
     extent.n3 = 1

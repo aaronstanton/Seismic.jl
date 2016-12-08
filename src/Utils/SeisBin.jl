@@ -129,7 +129,7 @@ function SeisBin(in,out;style="sxsygxgy",ang=90,gamma=1,osx=0,osy=0,ogx=0,ogy=0,
 	nx_out = nx1*nx2*nx3*nx4
 
 	stream = open(ParseHeaderName(in))
-	@compat nx_in = int(filesize(stream)/(4*length(fieldnames(Header))))
+	@compat nx_in = round(Int,filesize(stream)/(4*length(fieldnames(Header))))
 	seek(stream, header_count["n1"])
 	nt = read(stream,Int32)
 	seek(stream, header_count["d1"])
@@ -139,11 +139,11 @@ function SeisBin(in,out;style="sxsygxgy",ang=90,gamma=1,osx=0,osy=0,ogx=0,ogy=0,
 	h = Array(Header,1)
 	h[1] = InitSeisHeader()
 
-	extent = Extent(convert(Int32,nt),convert(Int32,nx1),convert(Int32,nx2),convert(Int32,nx3),convert(Int32,nx4),
-		   convert(Float32,0),convert(Float32,ox1),convert(Float32,ox2),convert(Float32,ox3),convert(Float32,ox4),
-		   convert(Float32,dt),convert(Float32,dx1),convert(Float32,dx2),convert(Float32,dx3),convert(Float32,dx4),
-		   "Time",label2,label3,label4,label5,
-		   "s",unit2,unit3,unit4,unit5,
+	extent = Extent(convert(Int32,nt),convert(Int32,nx4),convert(Int32,nx3),convert(Int32,nx2),convert(Int32,nx1),
+		   convert(Float32,0),convert(Float32,ox4),convert(Float32,ox3),convert(Float32,ox2),convert(Float32,ox1),
+		   convert(Float32,dt),convert(Float32,dx4),convert(Float32,dx3),convert(Float32,dx2),convert(Float32,dx1),
+		   "Time",label5,label4,label3,label2,
+		   "s",unit5,unit4,unit3,unit2,
 		   "")
 	
 	j = 1    
@@ -356,7 +356,7 @@ function SeisBin(in,out;style="sxsygxgy",ang=90,gamma=1,osx=0,osy=0,ogx=0,ogy=0,
 						position_d = 4*nt*(itrace - 1)
 						seek(stream_d,position_d)
 						write(stream_d,d[:,k])
-						PutHeader(stream_h,h[k],itrace)
+						#PutHeader(stream_h,h[k],itrace)
 					end
 				end
 			end
@@ -375,7 +375,7 @@ function SeisBin(in,out;style="sxsygxgy",ang=90,gamma=1,osx=0,osy=0,ogx=0,ogy=0,
 						position_d = 4*nt*(itrace - 1)
 						seek(stream_d,position_d)
 						write(stream_d,d[:,k])
-						PutHeader(stream_h,h[k],itrace)
+						#PutHeader(stream_h,h[k],itrace)
 					end
 				end
 			end
@@ -394,7 +394,7 @@ function SeisBin(in,out;style="sxsygxgy",ang=90,gamma=1,osx=0,osy=0,ogx=0,ogy=0,
 						position_d = 4*nt*(itrace - 1)
 						seek(stream_d,position_d)
 						write(stream_d,d[:,k])
-						PutHeader(stream_h,h[k],itrace)
+						#PutHeader(stream_h,h[k],itrace)
 					end
 				end
 			end
@@ -413,7 +413,7 @@ function SeisBin(in,out;style="sxsygxgy",ang=90,gamma=1,osx=0,osy=0,ogx=0,ogy=0,
 						position_d = 4*nt*(itrace - 1)
 						seek(stream_d,position_d)
 						write(stream_d,d[:,k])
-						PutHeader(stream_h,h[k],itrace)
+						#PutHeader(stream_h,h[k],itrace)
 					end
 				end
 			end
@@ -432,7 +432,7 @@ function SeisBin(in,out;style="sxsygxgy",ang=90,gamma=1,osx=0,osy=0,ogx=0,ogy=0,
 						position_d = 4*nt*(itrace - 1)
 						seek(stream_d,position_d)
 						write(stream_d,d[:,k])
-						PutHeader(stream_h,h[k],itrace)
+						#PutHeader(stream_h,h[k],itrace)
 					end
 				end
 			end
@@ -451,7 +451,7 @@ function SeisBin(in,out;style="sxsygxgy",ang=90,gamma=1,osx=0,osy=0,ogx=0,ogy=0,
 						position_d = 4*nt*(itrace - 1)
 						seek(stream_d,position_d)
 						write(stream_d,d[:,k])
-						PutHeader(stream_h,h[k],itrace)
+						#PutHeader(stream_h,h[k],itrace)
 					end
 				end
 			end
@@ -470,7 +470,7 @@ function SeisBin(in,out;style="sxsygxgy",ang=90,gamma=1,osx=0,osy=0,ogx=0,ogy=0,
 						position_d = 4*nt*(itrace - 1)
 						seek(stream_d,position_d)
 						write(stream_d,d[:,k])
-						PutHeader(stream_h,h[k],itrace)
+						#PutHeader(stream_h,h[k],itrace)
 					end
 				end
 			end

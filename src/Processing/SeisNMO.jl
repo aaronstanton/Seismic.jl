@@ -1,4 +1,4 @@
-function SeisNMO(in;dt=0.001,offset=1000.,tnmo=0.,vnmo=1500.,max_stretch=1000)
+function SeisNMO(in;dt=0.001,offset=1000.,tnmo=0.,vnmo=1500.,max_stretch=1000,fwd=true)
 
 	nt,nx = size(in)
 	if length(offset) < size(in,2)
@@ -28,8 +28,13 @@ function SeisNMO(in;dt=0.001,offset=1000.,tnmo=0.,vnmo=1500.,max_stretch=1000)
 				it1 = round(Int,floor(time/dt))+1
 				it2 = it1+1
 				a = its-it1
-				if (it2 <= nt) 
-					out[it,ix] = (1-a)*in[it1,ix]+a*in[it2,ix]
+				if (it2 <= nt)
+					if (fwd) 
+						out[it,ix] = (1-a)*in[it1,ix]+a*in[it2,ix]
+					else
+						out[it1,ix] += (1-a)*in[it,ix]
+						out[it2,ix] +=     a*in[it,ix]
+					end
 				end
 			end
 		end
