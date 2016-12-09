@@ -5,7 +5,7 @@ CFLAGS = -shared -dynamiclib -fopenmp -Wall
 INCLUDES = -I. -I${SEISMIC_PATH}/src/API/c -I/usr/local/include
 LIBS =  -lm -lfftw3f -L/usr/local/lib
 
-all: shotwem.dylib shotewem.dylib wavesep.dylib compute_angles.dylib shotillum.dylib shotwem_suboff.dylib shotewem_suboff.dylib
+all: shotwem.dylib shotewem.dylib wavesep.dylib compute_angles.dylib shotillum.dylib shotwem_suboff.dylib shotewem_suboff.dylib shotewem_suboff_esrc.dylib 
 
 shotwem.dylib:shotwem.c wem.c ${SEISMIC_PATH}/src/API/c/seismic.c
 		${CC} ${INCLUDES} -o $@ ${CFLAGS} shotwem.c wem.c ${SEISMIC_PATH}/src/API/c/seismic.c ${LIBS} 
@@ -27,6 +27,8 @@ shotwem_suboff.dylib:shotwem_suboff.c wem_suboff.c ${SEISMIC_PATH}/src/API/c/sei
 
 shotewem_suboff.dylib:shotewem_suboff.c ewem_suboff.c ${SEISMIC_PATH}/src/API/c/seismic.c
 		${CC} ${INCLUDES} -o $@ ${CFLAGS} shotewem_suboff.c ewem_suboff.c ${SEISMIC_PATH}/src/API/c/seismic.c ${LIBS} 
+shotewem_suboff_esrc.dylib:shotewem_suboff_esrc.c ewem_suboff_esrc.c ${SEISMIC_PATH}/src/API/c/seismic.c
+		${CC} ${INCLUDES} -o $@ ${CFLAGS} shotewem_suboff_esrc.c ewem_suboff_esrc.c ${SEISMIC_PATH}/src/API/c/seismic.c ${LIBS} 
 
 clean:
 		-rm -f *.o *.so *.dylib

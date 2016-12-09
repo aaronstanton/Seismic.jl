@@ -3,6 +3,7 @@ ShotProfileWEM,
 ShotProfileWEM_suboff,
 ShotProfileEWEM,
 ShotProfileEWEM_suboff,
+ShotProfileEWEM_suboff_esrc,
 ShotProfileEWEMHessian,
 ShotProfileEWEMHessian2,
 ShotIllumination,
@@ -19,6 +20,7 @@ include("ShotProfileWEM.jl")
 include("ShotProfileWEM_suboff.jl")
 include("ShotProfileEWEM.jl")
 include("ShotProfileEWEM_suboff.jl")
+include("ShotProfileEWEM_suboff_esrc.jl")
 include("ShotProfileEWEMHessian.jl")
 include("ShotProfileEWEMHessian2.jl")
 include("ShotIllumination.jl")
