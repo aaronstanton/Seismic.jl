@@ -1,4 +1,4 @@
-function ShotProfileEWEM_suboff_esrc(m::Array{ASCIIString,1},d::Array{ASCIIString,1},adj=true;pspi=true,nref=5,vp="vp.seis",vs="vs.seis",wav_x="wav_x.seis",wav_z="wav_z.seis",sz=0.,gz=0.,nhx=1,ohx=0,dhx=1,fmin=0,fmax=80,padt=1,padx=1,verbose=false,sx=[0],kz_eps=0.0005)
+function ShotProfileEWEM_suboff_esrc(m::Array{ASCIIString,1},d::Array{ASCIIString,1},adj=true;pspi=true,nref=5,vp="vp.seis",vs="vs.seis",wav_p="wav_p.seis",wav_s="wav_s.seis",sz=0.,gz=0.,nhx=1,ohx=0,dhx=1,fmin=0,fmax=80,padt=1,padx=1,verbose=false,sx=[0],kz_eps=0.0005)
 
 	nshot = length(sx)	
 	v,h,e = SeisRead(vp)
@@ -10,7 +10,7 @@ function ShotProfileEWEM_suboff_esrc(m::Array{ASCIIString,1},d::Array{ASCIIStrin
 	nz = h[1].n1
 	dz = h[1].d1
 	oz = h[1].o1
-	w_x,h,e = SeisRead(wav_x)
+	w_p,h,e = SeisRead(wav_p)
 	nt = h[1].n1
 	dt = h[1].d1
 	ot = h[1].o1
@@ -28,8 +28,8 @@ function ShotProfileEWEM_suboff_esrc(m::Array{ASCIIString,1},d::Array{ASCIIStrin
 		shot_list[ishot].mps = join([m[2] "_shot_" Int(floor(sx[ishot]))])
 		shot_list[ishot].vp = vp
 		shot_list[ishot].vs = vs
-		shot_list[ishot].wav_x = wav_x
-		shot_list[ishot].wav_z = wav_z
+		shot_list[ishot].wav_p = wav_p
+		shot_list[ishot].wav_s = wav_s
 		shot_list[ishot].sx = sx[ishot]
 		shot_list[ishot].sz = sz
 		shot_list[ishot].gz = gz
@@ -132,8 +132,8 @@ type Shot2C_suboff_esrc
 	mps
 	vp
 	vs
-	wav_x
-	wav_z
+	wav_p
+	wav_s
 	sx
 	sz
 	gz
@@ -162,7 +162,7 @@ function shotewem_suboff_esrc(shot)
 	join(["nref=",shot.nref]), 
 	join(["ux=",shot.ux]), join(["uz=",shot.uz]),
 	join(["mpp=",shot.mpp]), join(["mps=",shot.mps]),
-	join(["vp=",shot.vp]), join(["vs=",shot.vs]), join(["wav_x=",shot.wav_x]), join(["wav_z=",shot.wav_z]), 
+	join(["vp=",shot.vp]), join(["vs=",shot.vs]), join(["wav_p=",shot.wav_p]), join(["wav_s=",shot.wav_s]), 
 	join(["sx=",shot.sx]), join(["sz=",shot.sz]),  join(["gz=",shot.gz]), 
 	join(["nhx=",shot.nhx]),
 	join(["dhx=",shot.dhx]),

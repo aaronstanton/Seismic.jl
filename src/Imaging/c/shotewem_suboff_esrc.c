@@ -14,17 +14,17 @@ int main (int argc, char *argv[])
 {
 	char ux_name[512],uz_name[512];
 	char mpp_name[512],mps_name[512];
-	char vp_name[512],vs_name[512],wav_x_name[512],wav_z_name[512];
+	char vp_name[512],vs_name[512],wav_p_name[512],wav_s_name[512];
 	struct SeisHeader *h_ux=NULL;
 	struct SeisHeader *h_uz=NULL;
 	struct SeisHeader *h_mpp=NULL;
 	struct SeisHeader *h_mps=NULL;
 	struct SeisHeader *h_vp=NULL;
 	struct SeisHeader *h_vs=NULL;
-	struct SeisHeader *h_wav_x=NULL;
-	struct SeisHeader *h_wav_z=NULL;
+	struct SeisHeader *h_wav_p=NULL;
+	struct SeisHeader *h_wav_s=NULL;
 	int nx,nz,nt,ix,iz,it,nref,ihx;
-	float **ux=NULL,**uz=NULL,**mpp=NULL,**mps=NULL,**vp=NULL,**vs=NULL,**wav_x=NULL,**wav_z=NULL,sx,sz,gz;
+	float **ux=NULL,**uz=NULL,**mpp=NULL,**mps=NULL,**vp=NULL,**vs=NULL,**wav_p=NULL,**wav_s=NULL,sx,sz,gz;
 	float ox,dx,oz,dz,ot,dt,fmin,fmax;
 	int ntraces;
 	int padt,padx;
@@ -44,8 +44,8 @@ int main (int argc, char *argv[])
 	if (!par_read_string(argc,argv,"mps", mps_name)) { docs (); exit (1); }
 	if (!par_read_string(argc,argv,"vp", vp_name)) { docs (); exit (1); }
 	if (!par_read_string(argc,argv,"vs", vs_name)) { docs (); exit (1); }
-	if (!par_read_string(argc,argv,"wav_x", wav_x_name)) { docs (); exit (1); }
-	if (!par_read_string(argc,argv,"wav_z", wav_z_name)) { docs (); exit (1); }
+	if (!par_read_string(argc,argv,"wav_p", wav_p_name)) { docs (); exit (1); }
+	if (!par_read_string(argc,argv,"wav_s", wav_s_name)) { docs (); exit (1); }
 	if (!par_read_float(argc,argv,"sz",&sz)) sz = 0;
 	if (!par_read_float(argc,argv,"gz",&gz)) gz = 0;
 	if (!par_read_float(argc,argv,"sx",&sx)) sx = 0;
@@ -62,18 +62,18 @@ int main (int argc, char *argv[])
 	
 	// get dimensions from velocity (nz,oz,dz,nx,ox,dx) and wavelet (nt) files
 	InitFileHeader(&fh);
-	ReadFileHeader(wav_x_name,&fh);
+	ReadFileHeader(wav_p_name,&fh);
 	nt = fh.n1;
 	ReadFileHeader(vp_name,&fh);
 	nz = fh.n1; ntraces = fh.n2*fh.n3*fh.n4*fh.n5;
 
-	h_wav_x = allocSeisHeader(1);
-	wav_x = alloc2float(nt,1); 		
-	SeisRead(wav_x_name,wav_x,h_wav_x,&fh);
+	h_wav_p = allocSeisHeader(1);
+	wav_p = alloc2float(nt,1); 		
+	SeisRead(wav_p_name,wav_p,h_wav_p,&fh);
 
-	h_wav_z = allocSeisHeader(1);
-	wav_z = alloc2float(nt,1); 		
-	SeisRead(wav_z_name,wav_z,h_wav_z,&fh);
+	h_wav_s = allocSeisHeader(1);
+	wav_s = alloc2float(nt,1); 		
+	SeisRead(wav_s_name,wav_s,h_wav_s,&fh);
 
 	ot = fh.o1;
 	dt = fh.d1;
@@ -148,7 +148,7 @@ int main (int argc, char *argv[])
 
 	ewem_suboff_esrc(ux,uz,
 	     mpp,mps, 
-	     wav_x,wav_z,
+	     wav_p,wav_s,
 	     nt,ot,dt, 
 	     nx,ox,dx,
 	     nhx,ohx,dhx,
@@ -189,15 +189,15 @@ int main (int argc, char *argv[])
 	free2float(mps);
 	free2float(vp); 
 	free2float(vs); 
-	free2float(wav_x);
-	free2float(wav_z);
+	free2float(wav_p);
+	free2float(wav_s);
 	freeSeisHeader(h_ux);
 	freeSeisHeader(h_uz);
 	freeSeisHeader(h_mpp);
 	freeSeisHeader(h_mps);
 	freeSeisHeader(h_vp);
 	freeSeisHeader(h_vs);
-	freeSeisHeader(h_wav_x);
-	freeSeisHeader(h_wav_z);
+	freeSeisHeader(h_wav_p);
+	freeSeisHeader(h_wav_s);
 	return 0;
 }

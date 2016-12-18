@@ -2,7 +2,7 @@
 #include "ewem_suboff_esrc.h"
 void ewem_suboff_esrc(float **ux, float **uz,
 	  float **mpp, float **mps,
-	  float **wav_x, float **wav_z,
+	  float **wav_p, float **wav_s,
 	  int nt, float ot, float dt,
 	  int nmx,float omx, float dmx,
 	  int nhx,float ohx, float dhx,
@@ -20,7 +20,7 @@ void ewem_suboff_esrc(float **ux, float **uz,
 	int ifmin,ifmax;
 	float *d_t;
 	complex *d_w;
-	complex **ux_g_wx,**uz_g_wx,**ux_s_wx,**uz_s_wx;
+	complex **ux_g_wx,**uz_g_wx,**up_s_wx,**us_s_wx;
 	fftwf_complex *a,*b;
 	int *n;
 	fftwf_plan p1,p2;
@@ -137,8 +137,8 @@ void ewem_suboff_esrc(float **ux, float **uz,
 	else ifmin = 0;
 	ux_g_wx = alloc2complex(nw,nmx);
 	uz_g_wx = alloc2complex(nw,nmx);
-	ux_s_wx = alloc2complex(nw,nmx);
-	uz_s_wx = alloc2complex(nw,nmx);
+	up_s_wx = alloc2complex(nw,nmx);
+	us_s_wx = alloc2complex(nw,nmx);
 	d_t = alloc1float(nt);
 	d_w = alloc1complex(nw);
 	for (it=0;it<nt;it++)  d_t[it] = 0.;  
@@ -161,14 +161,14 @@ void ewem_suboff_esrc(float **ux, float **uz,
 	/**********************************************************************/
 	igx = (int) (sx - omx)/dmx; /*position to inject source in x-dir*/
 	/* source wavefield*/
-	for (ix=0;ix<nmx;ix++) for (iw=0;iw<nw;iw++) ux_s_wx[ix][iw] = 0.;
-	for (it=0;it<nt;it++) d_t[it] = wav_x[0][it];
+	for (ix=0;ix<nmx;ix++) for (iw=0;iw<nw;iw++) up_s_wx[ix][iw] = 0.;
+	for (it=0;it<nt;it++) d_t[it] = wav_p[0][it];
 	f_op(d_w,d_t,nw,nt,1); /* d_t to d_w */
-	for (iw=0;iw<nw;iw++) ux_s_wx[igx][iw] = d_w[iw];
-	for (ix=0;ix<nmx;ix++) for (iw=0;iw<nw;iw++) uz_s_wx[ix][iw] = 0.;
-	for (it=0;it<nt;it++) d_t[it] = wav_z[0][it];
+	for (iw=0;iw<nw;iw++) up_s_wx[igx][iw] = d_w[iw];
+	for (ix=0;ix<nmx;ix++) for (iw=0;iw<nw;iw++) us_s_wx[ix][iw] = 0.;
+	for (it=0;it<nt;it++) d_t[it] = wav_s[0][it];
 	f_op(d_w,d_t,nw,nt,1); /* d_t to d_w */
-	for (iw=0;iw<nw;iw++) uz_s_wx[igx][iw] = d_w[iw];
+	for (iw=0;iw<nw;iw++) us_s_wx[igx][iw] = d_w[iw];
 	/* receiver wavefield*/
 	if (adj){
 		for (ix=0;ix<nmx;ix++){
@@ -195,8 +195,8 @@ void ewem_suboff_esrc(float **ux, float **uz,
 		}
 	}
 	max_source = 0.;
-	for (it=0;it<nt;it++) if (max_source < fabsf(wav_x[0][it])/sqrtf((float) ntfft)) max_source = fabsf(wav_x[0][it])/sqrtf((float) ntfft);
-	for (it=0;it<nt;it++) if (max_source < fabsf(wav_z[0][it])/sqrtf((float) ntfft)) max_source = fabsf(wav_z[0][it])/sqrtf((float) ntfft);
+	for (it=0;it<nt;it++) if (max_source < fabsf(wav_p[0][it])/sqrtf((float) ntfft)) max_source = fabsf(wav_p[0][it])/sqrtf((float) ntfft);
+	for (it=0;it<nt;it++) if (max_source < fabsf(wav_s[0][it])/sqrtf((float) ntfft)) max_source = fabsf(wav_s[0][it])/sqrtf((float) ntfft);
 
 	nthread = omp_thread_count();
 	//fprintf(stderr,"nthread=%d\n",nthread);
@@ -228,13 +228,13 @@ void ewem_suboff_esrc(float **ux, float **uz,
 	}
 
 	progress = 0.;
-#pragma omp parallel for private(iw) shared(mpp_threads,mps_threads,ux_g_wx,uz_g_wx,ux_s_wx,uz_s_wx)
+#pragma omp parallel for private(iw) shared(mpp_threads,mps_threads,ux_g_wx,uz_g_wx,up_s_wx,us_s_wx)
 	for (iw=ifmin;iw<ifmax;iw++){ 
 		progress += 1./((float) ifmax - ifmin);
 		if (verbose) progress_msg(progress);
 		elastic_extrap1f_esrc(mpp_threads,mps_threads,
 				ux_g_wx,uz_g_wx,
-				ux_s_wx,uz_s_wx,
+				up_s_wx,us_s_wx,
 				max_source,iw,nw,ifmax,ntfft,
 				dw,dkx,nkx,
 				nz,oz,dz,gz,sz,nmx,omx,dmx,
@@ -286,8 +286,8 @@ void ewem_suboff_esrc(float **ux, float **uz,
 	free1complex(d_w);
 	free2complex(ux_g_wx);
 	free2complex(uz_g_wx);
-	free2complex(ux_s_wx);
-	free2complex(uz_s_wx);
+	free2complex(up_s_wx);
+	free2complex(us_s_wx);
 	free1float(po_p);
 	free2float(pd_p);
 	free1float(po_s);
@@ -305,7 +305,7 @@ void ewem_suboff_esrc(float **ux, float **uz,
 
 void elastic_extrap1f_esrc(float **mpp, float **mps,
 		complex **ux_g_wx, complex **uz_g_wx, 
-		complex **ux_s_wx, complex **uz_s_wx,
+		complex **up_s_wx, complex **us_s_wx,
 		float max_source, int iw, int nw,int ifmax,int ntfft,float dw,float dkx,int nkx,
 		int nz, float oz, float dz, float gz, float sz,
 		int nmx,float omx, float dmx,
@@ -322,7 +322,7 @@ void elastic_extrap1f_esrc(float **mpp, float **mps,
 /*< extrapolate 1 frequency >*/
 {
 	float w,factor,z,hx,sx,gx;
-	int iz,ix,imx,ihx,isx,igx,ithread;
+	int iz,ix,imx,ihx,isx,igx,ithread,isz;
 	complex *ux_xg,*uz_xg;
 	complex *up_xg,*us_xg;
 	complex *ux_xs,*uz_xs;
@@ -360,13 +360,16 @@ void elastic_extrap1f_esrc(float **mpp, float **mps,
 		uz_xg[ix] = uz_g_wx[ix][iw]/sqrtf((float) ntfft); // *pow(w,2)
 
 	}
-	for (ix=0;ix<nmx;ix++) ux_xs[ix] = ux_s_wx[ix][iw]/sqrtf((float) ntfft);
-	for (ix=0;ix<nmx;ix++) uz_xs[ix] = uz_s_wx[ix][iw]/sqrtf((float) ntfft);
+	for (ix=0;ix<nmx;ix++) up_xs[ix] = up_s_wx[ix][iw]/sqrtf((float) ntfft);
+	for (ix=0;ix<nmx;ix++) us_xs[ix] = us_s_wx[ix][iw]/sqrtf((float) ntfft);
+	isz = (int) ((sz - oz)/dz);
+	elastic_separate_2d(ux_xs,uz_xs,up_xs,us_xs,w,dkx,nkx,nmx,omx,dmx,1./po_p[isz],1./po_s[isz],p1,p2,false,false);
+
 	for (iz=0;iz<nz;iz++){ // extrapolate source wavefield 
 		z = oz + dz*iz;
 		if (z >= sz){
 			elastic_separate_2d(ux_xs,uz_xs,up_xs,us_xs,w,dkx,nkx,nmx,omx,dmx,1./po_p[iz],1./po_s[iz],p1,p2,true,false);
-			if (pspi){ 
+			if (pspi){
 				pspiop(up_xs,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,true,true,verbose,kz_eps);
 				pspiop(us_xs,w,dkx,nkx,nmx,omx,dmx,dz,iz,vs,po_s,pd_s,vsref,isref1,isref2,nref,p1,p2,true,true,verbose,kz_eps);
 			}
@@ -384,19 +387,18 @@ void elastic_extrap1f_esrc(float **mpp, float **mps,
 		}
 	}
 	if (adj){
-		for (iz=0;iz<nz;iz++){ // extrapolate receiver wavefield
+		for (iz=0;iz<nz;iz++){ // extrapolate receiver wavefield only using the P wave velocity. Separate only to image.
 			z = oz + dz*iz;
 			if (z >= gz){
-				elastic_separate_2d(ux_xg,uz_xg,up_xg,us_xg,w,dkx,nkx,nmx,omx,dmx,1./po_p[iz],1./po_s[iz],p1,p2,true,adj);
 				if (pspi){
-					pspiop(up_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,true,false,verbose,kz_eps);
-					pspiop(us_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vs,po_s,pd_s,vsref,isref1,isref2,nref,p1,p2,true,false,verbose,kz_eps);
+					pspiop(ux_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,true,false,verbose,kz_eps);
+					pspiop(uz_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vs,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,true,false,verbose,kz_eps);
 				}
 				else{
-					ssop(up_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,p1,p2,true,false,verbose,kz_eps);
-					ssop(us_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vs,po_s,pd_s,p1,p2,true,false,verbose,kz_eps);
+					ssop(ux_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,p1,p2,true,false,verbose,kz_eps);
+					ssop(uz_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,p1,p2,true,false,verbose,kz_eps);
 				}
-				elastic_separate_2d(ux_xg,uz_xg,up_xg,us_xg,w,dkx,nkx,nmx,omx,dmx,1./po_p[iz],1./po_s[iz],p1,p2,false,adj);
+				elastic_separate_2d(ux_xg,uz_xg,up_xg,us_xg,w,dkx,nkx,nmx,omx,dmx,1./po_p[iz],1./po_s[iz],p1,p2,true,adj);
 				for (imx=0;imx<nmx;imx++){ 
           				for (ihx=0;ihx<nhx;ihx++){
             					hx = ihx*dhx + ohx;
@@ -405,8 +407,8 @@ void elastic_extrap1f_esrc(float **mpp, float **mps,
             					isx = (int) truncf((sx - omx)/dmx);
             					igx = (int) truncf((gx - omx)/dmx);
             					if (isx >=0 && isx < nmx && igx >=0 && igx < nmx){
- 							mpp[imx*nhx*nthread + ihx*nthread + ithread][iz] += factor*crealf(up_xg[igx]*conjf(smig_p[isx][iz]));
- 							mps[imx*nhx*nthread + ihx*nthread + ithread][iz] += factor*crealf(up_xg[igx]*conjf(smig_s[isx][iz]));
+ 							      mpp[imx*nhx*nthread + ihx*nthread + ithread][iz] += factor*crealf(up_xg[igx]*conjf(smig_p[isx][iz]));
+ 							      mps[imx*nhx*nthread + ihx*nthread + ithread][iz] += factor*crealf(us_xg[igx]*conjf(smig_s[isx][iz]));
             					}
 					}
 				}
@@ -414,10 +416,9 @@ void elastic_extrap1f_esrc(float **mpp, float **mps,
 		}
 	}
 	else{
-		for (iz=nz-1;iz>=0;iz--){ // extrapolate receiver wavefield 
+		for (iz=nz-1;iz>=0;iz--){ // extrapolate receiver wavefield only using the P wave velocity. Separate only to image.
 			z = oz + dz*iz;
 			if (z >= gz){
-				elastic_separate_2d(ux_xg,uz_xg,up_xg,us_xg,w,dkx,nkx,nmx,omx,dmx,1./po_p[iz],1./po_s[iz],p1,p2,true,adj);
 				for (imx=0;imx<nmx;imx++){ 
           				for (ihx=0;ihx<nhx;ihx++){
             					hx = ihx*dhx + ohx;
@@ -426,19 +427,20 @@ void elastic_extrap1f_esrc(float **mpp, float **mps,
             					isx = (int) truncf((sx - omx)/dmx);
             					igx = (int) truncf((gx - omx)/dmx);
             					if (isx >=0 && isx < nmx && igx >=0 && igx < nmx){
-							up_xg[igx] += smig_p[isx][iz]*mpp[imx*nhx + ihx][iz] + smig_s[isx][iz]*mps[imx*nhx + ihx][iz];
+								up_xg[igx] += smig_p[isx][iz]*mpp[imx*nhx + ihx][iz];
+								us_xg[igx] += smig_s[isx][iz]*mps[imx*nhx + ihx][iz];
             					}
           				}
 				}
+				elastic_separate_2d(ux_xg,uz_xg,up_xg,us_xg,w,dkx,nkx,nmx,omx,dmx,1./po_p[iz],1./po_s[iz],p1,p2,false,adj);
 				if (pspi){ 
-					pspiop(up_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,false,false,verbose,kz_eps);
-					pspiop(us_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vs,po_s,pd_s,vsref,isref1,isref2,nref,p1,p2,false,false,verbose,kz_eps);
+					pspiop(ux_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,false,false,verbose,kz_eps);
+					pspiop(uz_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,false,false,verbose,kz_eps);
 				}
 				else{
-					ssop(up_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,p1,p2,false,false,verbose,kz_eps);
-					ssop(us_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vs,po_s,pd_s,p1,p2,false,false,verbose,kz_eps);
+					ssop(ux_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,p1,p2,false,false,verbose,kz_eps);
+					ssop(uz_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,p1,p2,false,false,verbose,kz_eps);
 				}
-				elastic_separate_2d(ux_xg,uz_xg,up_xg,us_xg,w,dkx,nkx,nmx,omx,dmx,1./po_p[iz],1./po_s[iz],p1,p2,false,adj);
 			}
 		}
 		for (ix=0;ix<nmx;ix++){

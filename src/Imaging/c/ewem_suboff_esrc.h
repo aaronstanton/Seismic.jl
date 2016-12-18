@@ -2,7 +2,7 @@
 #define _ewem_suboff_esrc_h_
 void ewem_suboff_esrc(float **ux, float **uz,
 		float **mpp, float **mps2,
-		float **wav_x, float **wav_z,
+		float **wav_p, float **wav_s,
 		int nt, float ot, float dt, 
 		int nmx,float omx, float dmx,
 		int nhx,float ohx, float dhx,
@@ -15,7 +15,7 @@ void ewem_suboff_esrc(float **ux, float **uz,
 		float kz_eps);
 void elastic_extrap1f_esrc(float **mpp, float **mps,
 		complex **ux_g_wx, complex **uz_g_wx, 
-		complex **ux_s_wx, complex **uz_s_wx,
+		complex **up_s_wx, complex **us_s_wx,
 		float max_source, int iw, int nw,int ifmax,int ntfft,float dw,float dkx,int nkx,
 		int nz, float oz, float dz, float gz, float sz,
 		int nmx,float omx, float dmx,
