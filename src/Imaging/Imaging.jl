@@ -11,6 +11,7 @@ ShotProfileLSWEM,
 ShotProfileLSWEM_suboff,
 ShotProfileLSEWEM,
 ShotProfileLSEWEM_suboff,
+ShotProfileLSEWEM_suboff_esrc,
 WaveSep,
 ComputeAngles,
 SeisPSTM,
@@ -28,6 +29,7 @@ include("ShotProfileLSWEM.jl")
 include("ShotProfileLSWEM_suboff.jl")
 include("ShotProfileLSEWEM.jl")
 include("ShotProfileLSEWEM_suboff.jl")
+include("ShotProfileLSEWEM_suboff_esrc.jl")
 include("WaveSep.jl")
 include("ComputeAngles.jl")
 include("SeisPSTM.jl")

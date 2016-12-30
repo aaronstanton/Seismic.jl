@@ -387,18 +387,19 @@ void elastic_extrap1f_esrc(float **mpp, float **mps,
 		}
 	}
 	if (adj){
-		for (iz=0;iz<nz;iz++){ // extrapolate receiver wavefield only using the P wave velocity. Separate only to image.
+		for (iz=0;iz<nz;iz++){ // extrapolate receiver wavefield only using the P wave velocity. 
 			z = oz + dz*iz;
 			if (z >= gz){
+				elastic_separate_2d(ux_xg,uz_xg,up_xg,us_xg,w,dkx,nkx,nmx,omx,dmx,1./po_p[iz],1./po_s[iz],p1,p2,true,adj);
 				if (pspi){
-					pspiop(ux_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,true,false,verbose,kz_eps);
-					pspiop(uz_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vs,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,true,false,verbose,kz_eps);
+					pspiop(up_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,true,false,verbose,kz_eps);
+					pspiop(us_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vs,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,true,false,verbose,kz_eps);
 				}
 				else{
-					ssop(ux_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,p1,p2,true,false,verbose,kz_eps);
-					ssop(uz_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,p1,p2,true,false,verbose,kz_eps);
+					ssop(up_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,p1,p2,true,false,verbose,kz_eps);
+					ssop(us_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,p1,p2,true,false,verbose,kz_eps);
 				}
-				elastic_separate_2d(ux_xg,uz_xg,up_xg,us_xg,w,dkx,nkx,nmx,omx,dmx,1./po_p[iz],1./po_s[iz],p1,p2,true,adj);
+				elastic_separate_2d(ux_xg,uz_xg,up_xg,us_xg,w,dkx,nkx,nmx,omx,dmx,1./po_p[iz],1./po_s[iz],p1,p2,false,adj);
 				for (imx=0;imx<nmx;imx++){ 
           				for (ihx=0;ihx<nhx;ihx++){
             					hx = ihx*dhx + ohx;
@@ -416,9 +417,10 @@ void elastic_extrap1f_esrc(float **mpp, float **mps,
 		}
 	}
 	else{
-		for (iz=nz-1;iz>=0;iz--){ // extrapolate receiver wavefield only using the P wave velocity. Separate only to image.
+		for (iz=nz-1;iz>=0;iz--){ // extrapolate receiver wavefield only using the P wave velocity. 
 			z = oz + dz*iz;
 			if (z >= gz){
+				elastic_separate_2d(ux_xg,uz_xg,up_xg,us_xg,w,dkx,nkx,nmx,omx,dmx,1./po_p[iz],1./po_s[iz],p1,p2,true,adj);
 				for (imx=0;imx<nmx;imx++){ 
           				for (ihx=0;ihx<nhx;ihx++){
             					hx = ihx*dhx + ohx;
@@ -432,15 +434,16 @@ void elastic_extrap1f_esrc(float **mpp, float **mps,
             					}
           				}
 				}
-				elastic_separate_2d(ux_xg,uz_xg,up_xg,us_xg,w,dkx,nkx,nmx,omx,dmx,1./po_p[iz],1./po_s[iz],p1,p2,false,adj);
 				if (pspi){ 
-					pspiop(ux_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,false,false,verbose,kz_eps);
-					pspiop(uz_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,false,false,verbose,kz_eps);
+					pspiop(up_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,false,false,verbose,kz_eps);
+					pspiop(us_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,vpref,ipref1,ipref2,nref,p1,p2,false,false,verbose,kz_eps);
 				}
 				else{
-					ssop(ux_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,p1,p2,false,false,verbose,kz_eps);
-					ssop(uz_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,p1,p2,false,false,verbose,kz_eps);
+					ssop(up_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,p1,p2,false,false,verbose,kz_eps);
+					ssop(us_xg,w,dkx,nkx,nmx,omx,dmx,dz,iz,vp,po_p,pd_p,p1,p2,false,false,verbose,kz_eps);
 				}
+				elastic_separate_2d(ux_xg,uz_xg,up_xg,us_xg,w,dkx,nkx,nmx,omx,dmx,1./po_p[iz],1./po_s[iz],p1,p2,false,adj);
+
 			}
 		}
 		for (ix=0;ix<nmx;ix++){
