@@ -84,9 +84,19 @@ function ShotProfileEWEM_suboff_esrc(m::Array{ASCIIString,1},d::Array{ASCIIStrin
 		mps_all,h,ext  = SeisRead(m[2])
 		for ishot = 1 : nshot
 			mpp_shot,h_shot,ext  = SeisRead(shot_list[ishot].mpp)
-			mpp_all += mpp_shot
+
+
+
+			offset = Seismic.ExtractHeader(h_shot,"mx") - shot_list[ishot].sx
+			mpp_shot = SeisMute(mpp_shot,offset=offset,tmute=0.0,vmute=0.35,taper=1000,dt=h_shot[1].d1)
+
+			mpp_all[:] = mpp_all[:] + mpp_shot[:]
 			mps_shot,h_shot,ext  = SeisRead(shot_list[ishot].mps)
-			mps_all += mps_shot
+
+			offset = Seismic.ExtractHeader(h_shot,"mx") - shot_list[ishot].sx
+			mps_shot = SeisMute(mps_shot,offset=offset,tmute=0.0,vmute=0.35,taper=1000,dt=h_shot[1].d1)
+
+			mps_all[:] = mps_all[:] + mps_shot[:]
 			SeisRemove(shot_list[ishot].ux)
 			SeisRemove(shot_list[ishot].uz)
 			SeisRemove(shot_list[ishot].mpp)
